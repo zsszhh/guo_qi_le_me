@@ -5,7 +5,6 @@ import '../providers/ai_config_list_provider.dart';
 import '../theme/colors.dart';
 import '../theme/typography.dart';
 import '../theme/spacing.dart';
-import '../utils/constants.dart';
 import 'ai_config_edit_page.dart';
 
 /// AI配置列表页面 - 管理多个AI服务配置
@@ -125,7 +124,7 @@ class AIConfigListPage extends ConsumerWidget {
       ),
       color: AppColors.surfaceContainerLowest,
       child: InkWell(
-        borderRadius: AppRadius.md,
+        borderRadius: AppRadius.medium,
         onTap: () => _navigateToEdit(context, config),
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.md),
@@ -303,8 +302,8 @@ class AIConfigListPage extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.surfaceContainerLowest,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: AppRadius.large),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
       ),
       builder: (context) {
         return SafeArea(
