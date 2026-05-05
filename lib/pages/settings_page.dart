@@ -7,6 +7,7 @@ import 'ai_config_page.dart';
 import 'webdav_config_page.dart';
 import 'reminder_config_page.dart';
 import 'reminder_center_page.dart';
+import 'privacy_policy_page.dart';
 
 /// 设置页面
 class SettingsPage extends StatelessWidget {
@@ -137,8 +138,10 @@ class SettingsPage extends StatelessWidget {
                 title: '隐私政策',
                 subtitle: '了解我们如何保护你的数据',
                 onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('隐私政策页面即将推出')),
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const PrivacyPolicyPage(),
+                    ),
                   );
                 },
               ),

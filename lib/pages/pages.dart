@@ -8,3 +8,4 @@ export 'settings_page.dart';
 export 'ai_config_page.dart';
 export 'webdav_config_page.dart';
 export 'reminder_center_page.dart';
+export 'privacy_policy_page.dart';
