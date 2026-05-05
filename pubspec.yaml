@@ -1,0 +1,75 @@
+name: guo_qi_le_me
+description: "过期了么 - AI智能物品保质期管理应用"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.5
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+  # 状态管理
+  flutter_riverpod: ^3.3.1
+  riverpod_annotation: ^4.0.2
+
+  # 本地数据库
+  sqflite: ^2.4.2
+  path: ^1.9.1
+
+  # 图片选择
+  image_picker: ^1.1.2
+
+  # 语音识别
+  speech_to_text: ^7.0.0
+
+  # 推送通知
+  flutter_local_notifications: ^21.0.0
+
+  # 后台任务调度
+  workmanager: ^0.9.0
+
+  # HTTP请求
+  dio: ^5.8.0+1
+
+  # 本地存储
+  shared_preferences: ^2.5.3
+
+  # 加密存储
+  flutter_secure_storage: ^10.0.0
+
+  # 路径处理
+  path_provider: ^2.1.5
+
+  # 压缩解压
+  archive: ^4.0.4
+
+  # WebDAV
+  webdav_client: ^1.2.2
+
+  # UUID
+  uuid: ^4.5.1
+
+  # 日期格式化
+  intl: ^0.20.2
+
+  # 图标
+  google_fonts: ^8.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0
+  riverpod_generator: ^4.0.3
+  build_runner: ^2.15.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
