@@ -25,7 +25,7 @@ class CustomOptionService {
         options.addAll(_getDefaultLocations(category));
         break;
       case CustomOptionType.unit:
-        options.addAll(['个', '盒', '袋', '瓶', '包', '罐', '份']);
+        options.addAll(['个', '盒', '袋', '瓶', '包', '罐', '份', '支', '片', '张', '条', '块', '根', '颗', '粒', 'ml', 'L', 'g', 'kg']);
         break;
       case CustomOptionType.subCategory:
         options.addAll(_getDefaultSubCategories(category));
@@ -147,21 +147,33 @@ class CustomOptionService {
 
   /// 获取默认存放位置
   List<String> _getDefaultLocations(String? category) {
-    if (category == PresetCategories.food) {
-      return ['冰箱冷藏', '冰箱冷冻', '储藏室', '厨房'];
-    } else if (category == PresetCategories.drug) {
-      return ['药箱', '床头柜', '冰箱', '随身携带'];
+    switch (category) {
+      case PresetCategories.food:
+        return ['冰箱冷藏', '冰箱冷冻', '储藏室', '厨房', '餐边柜', '阳台'];
+      case PresetCategories.drug:
+        return ['药箱', '床头柜', '冰箱', '随身携带', '客厅茶几', '办公室'];
+      case PresetCategories.cosmetic:
+        return ['梳妆台', '浴室柜', '洗漱包', '随身携带'];
+      case PresetCategories.daily:
+        return ['储藏室', '卫生间', '厨房', '阳台', '客厅'];
+      default:
+        return ['储藏室'];
     }
-    return ['储藏室'];
   }
 
   /// 获取默认子分类
   List<String> _getDefaultSubCategories(String? category) {
-    if (category == PresetCategories.food) {
-      return ['生鲜食品', '包装食品', '调味品', '饮料'];
-    } else if (category == PresetCategories.drug) {
-      return ['处方药', '非处方药', '保健品', '医疗器械'];
+    switch (category) {
+      case PresetCategories.food:
+        return ['生鲜食品', '包装食品', '调味品', '饮料', '乳制品', '冷冻食品', '零食', '粮油米面'];
+      case PresetCategories.drug:
+        return ['处方药', '非处方药', '保健品', '医疗器械', '维生素', '外用药', '中药'];
+      case PresetCategories.cosmetic:
+        return ['护肤品', '彩妆', '洗护用品', '香水', '面膜', '防晒'];
+      case PresetCategories.daily:
+        return ['清洁用品', '纸品', '洗护用品', '文具', '电池充电'];
+      default:
+        return [];
     }
-    return [];
   }
 }

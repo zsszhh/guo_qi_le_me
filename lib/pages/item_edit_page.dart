@@ -24,6 +24,9 @@ class PrefilledData {
   final DateTime? purchaseDate;
   final DateTime? expiryDate;
   final double? aiConfidence;
+  final bool dateVisible;
+  final String? dateLocationHint;
+  final String expiryInfoSource;
 
   const PrefilledData({
     this.name,
@@ -33,6 +36,9 @@ class PrefilledData {
     this.purchaseDate,
     this.expiryDate,
     this.aiConfidence,
+    this.dateVisible = true,
+    this.dateLocationHint,
+    this.expiryInfoSource = '标签显示',
   });
 }
 
@@ -172,6 +178,9 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
               child: ListView(
                 padding: const EdgeInsets.all(AppSpacing.lg),
                 children: [
+                  // AI识别提示条
+                  if (_hasPrefilledData) _buildAIHintBanner(),
+
                   // 图片区域
                   _buildImageSection(),
                   const SizedBox(height: AppSpacing.lg),
@@ -312,7 +321,32 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
             // 过期日期
             ListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('过期日期 *'),
+              title: Row(
+                children: [
+                  const Text('过期日期 *'),
+                  if (_hasPrefilledData &&
+                      widget.prefilledData!.expiryInfoSource != '标签显示') ...[
+                    const SizedBox(width: AppSpacing.sm),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.secondaryContainer,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        widget.prefilledData!.expiryInfoSource,
+                        style: AppTypography.labelCaps.copyWith(
+                          color: AppColors.secondary,
+                          fontSize: 10,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
               subtitle: Text(_formatDate(_expiryDate)),
               trailing: const Icon(Icons.calendar_today),
               onTap: () => _selectDate(isExpiryDate: true),
@@ -465,6 +499,91 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
           ),
         ),
       ],
+    );
+  }
+
+  /// AI识别提示条
+  Widget _buildAIHintBanner() {
+    final data = widget.prefilledData!;
+    final confidence = data.aiConfidence ?? 0.8;
+
+    // 根据置信度决定颜色和提示
+    Color bannerColor;
+    Color textColor;
+    IconData icon;
+    String message;
+
+    if (confidence < 0.5) {
+      bannerColor = AppColors.errorContainer;
+      textColor = AppColors.error;
+      icon = Icons.warning_amber_rounded;
+      message = 'AI识别置信度较低，请仔细核对信息';
+    } else if (confidence < 0.8) {
+      bannerColor = AppColors.secondaryContainer;
+      textColor = AppColors.secondary;
+      icon = Icons.info_outline;
+      message = 'AI识别置信度中等，建议确认关键信息';
+    } else {
+      bannerColor = AppColors.primaryContainer;
+      textColor = AppColors.primary;
+      icon = Icons.auto_awesome;
+      message = 'AI已识别物品信息，请确认后保存';
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: bannerColor,
+        borderRadius: AppRadius.medium,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 20, color: textColor),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  message,
+                  style: AppTypography.bodySm.copyWith(color: textColor),
+                ),
+              ),
+              Text(
+                '${(confidence * 100).toInt()}%',
+                style: AppTypography.labelCaps.copyWith(
+                  color: textColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          // 日期未识别提示
+          if (!data.dateVisible && data.dateLocationHint != null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.sm),
+              decoration: BoxDecoration(
+                color: AppColors.surface.withValues(alpha: 0.5),
+                borderRadius: AppRadius.small,
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.calendar_today, size: 16, color: textColor),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      data.dateLocationHint!,
+                      style: AppTypography.bodySm.copyWith(color: textColor),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 

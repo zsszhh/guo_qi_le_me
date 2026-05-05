@@ -7,7 +7,7 @@ import 'pages/library_page.dart';
 import 'pages/ai_input_page.dart';
 import 'pages/reminder_center_page.dart';
 import 'pages/settings_page.dart';
-import 'pages/ai_config_page.dart';
+import 'pages/ai_config_list_page.dart';
 import 'pages/item_detail_page.dart';
 
 /// 主应用
@@ -28,7 +28,7 @@ class GuoQilLeMeApp extends StatelessWidget {
         themeMode: ThemeMode.system,
         home: const MainNavigator(),
         routes: {
-          '/ai-config': (context) => const AIConfigPage(),
+          '/ai-config': (context) => const AIConfigListPage(),
           '/item-detail': (context) {
             final itemId = ModalRoute.of(context)?.settings.arguments as String?;
             if (itemId != null) {

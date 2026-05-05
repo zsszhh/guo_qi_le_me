@@ -425,6 +425,7 @@ class ReminderCenterPage extends ConsumerWidget {
                         ),
                         const SizedBox(height: 4),
                         Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
                               _getStatusIcon(isExpired, isUrgent),
@@ -474,7 +475,7 @@ class ReminderCenterPage extends ConsumerWidget {
   /// 构建分类图标
   Widget _buildCategoryIcon(Item item) {
     return Icon(
-      item.category == PresetCategories.food ? Icons.restaurant : Icons.medication,
+      PresetCategories.getIcon(item.category),
       color: AppColors.onSurfaceVariant,
       size: 28,
     );

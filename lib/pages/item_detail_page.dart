@@ -174,7 +174,7 @@ class ItemDetailPage extends ConsumerWidget {
 
   Widget _buildCategoryIcon(Item item) {
     return Icon(
-      item.category == PresetCategories.food ? Icons.restaurant : Icons.medication,
+      PresetCategories.getIcon(item.category),
       size: 40,
       color: AppColors.primary,
     );

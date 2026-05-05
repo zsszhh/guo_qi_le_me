@@ -371,20 +371,13 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                 Navigator.pop(context);
               },
             ),
-            ListTile(
-              title: const Text('食品'),
+            ...PresetCategories.defaults.map((category) => ListTile(
+              title: Text(category),
               onTap: () {
-                ref.read(itemsProvider.notifier).setCategoryFilter(PresetCategories.food);
+                ref.read(itemsProvider.notifier).setCategoryFilter(category);
                 Navigator.pop(context);
               },
-            ),
-            ListTile(
-              title: const Text('药品'),
-              onTap: () {
-                ref.read(itemsProvider.notifier).setCategoryFilter(PresetCategories.drug);
-                Navigator.pop(context);
-              },
-            ),
+            )),
           ],
         ),
       ),

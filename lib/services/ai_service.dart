@@ -16,6 +16,17 @@ class AIRecognitionResult {
   final double confidence;
   final String? rawResponse;
 
+  /// 日期是否在图片中可见
+  final bool dateVisible;
+  /// 日期位置的提示（如：日期可能在封口处，建议补拍）
+  final String? dateLocationHint;
+  /// 过期日期来源：标签显示/推算/默认估算
+  final String expiryInfoSource;
+  /// 生产日期（如果有）
+  final DateTime? productionDate;
+  /// 保质期（原始文本，如"12个月"、"180天"）
+  final String? shelfLife;
+
   const AIRecognitionResult({
     required this.name,
     required this.category,
@@ -26,6 +37,11 @@ class AIRecognitionResult {
     required this.expiryDate,
     required this.confidence,
     this.rawResponse,
+    this.dateVisible = true,
+    this.dateLocationHint,
+    this.expiryInfoSource = '标签显示',
+    this.productionDate,
+    this.shelfLife,
   });
 }
 
@@ -277,16 +293,36 @@ class AIService {
       } catch (_) {}
     }
 
+    DateTime? productionDate;
+    if (json['production_date'] != null) {
+      try {
+        productionDate = DateTime.parse(json['production_date'] as String);
+      } catch (_) {}
+    }
+
     DateTime expiryDate;
     if (json['expiry_date'] != null) {
       try {
         expiryDate = DateTime.parse(json['expiry_date'] as String);
       } catch (_) {
-        expiryDate = DateTime.now().add(const Duration(days: 7));
+        // 尝试根据生产日期+保质期推算
+        expiryDate = _calculateExpiryDate(
+          productionDate: productionDate,
+          shelfLife: json['shelf_life'] as String?,
+          category: category,
+        );
       }
     } else {
-      expiryDate = DateTime.now().add(const Duration(days: 7));
+      // 没有过期日期，尝试推算
+      expiryDate = _calculateExpiryDate(
+        productionDate: productionDate,
+        shelfLife: json['shelf_life'] as String?,
+        category: category,
+      );
     }
+
+    final dateVisible = json['date_visible'] as bool? ?? true;
+    final expiryInfoSource = json['expiry_info_source'] as String? ?? '默认估算';
 
     return AIRecognitionResult(
       name: name,
@@ -298,7 +334,74 @@ class AIService {
       expiryDate: expiryDate,
       confidence: (json['confidence'] as num?)?.toDouble() ?? 0.8,
       rawResponse: rawResponse,
+      dateVisible: dateVisible,
+      dateLocationHint: json['date_location_hint'] as String?,
+      expiryInfoSource: expiryInfoSource,
+      productionDate: productionDate,
+      shelfLife: json['shelf_life'] as String?,
     );
+  }
+
+  /// 根据生产日期和保质期推算过期日期
+  DateTime _calculateExpiryDate({
+    DateTime? productionDate,
+    String? shelfLife,
+    required String category,
+  }) {
+    final now = DateTime.now();
+
+    // 如果有生产日期和保质期，推算过期日期
+    if (productionDate != null && shelfLife != null) {
+      final days = _parseShelfLifeToDays(shelfLife);
+      if (days > 0) {
+        return productionDate.add(Duration(days: days));
+      }
+    }
+
+    // 根据分类返回默认保质期
+    final defaultDays = _getDefaultShelfLifeDays(category);
+    return now.add(Duration(days: defaultDays));
+  }
+
+  /// 解析保质期文本为天数
+  int _parseShelfLifeToDays(String shelfLife) {
+    final text = shelfLife.trim();
+
+    // 匹配 "X天"
+    var match = RegExp(r'(\d+)\s*天').firstMatch(text);
+    if (match != null) {
+      return int.parse(match.group(1)!);
+    }
+
+    // 匹配 "X个月" 或 "X月"
+    match = RegExp(r'(\d+)\s*个?月').firstMatch(text);
+    if (match != null) {
+      return int.parse(match.group(1)!) * 30;
+    }
+
+    // 匹配 "X年"
+    match = RegExp(r'(\d+)\s*年').firstMatch(text);
+    if (match != null) {
+      return int.parse(match.group(1)!) * 365;
+    }
+
+    return 0;
+  }
+
+  /// 根据分类获取默认保质期天数
+  int _getDefaultShelfLifeDays(String category) {
+    switch (category) {
+      case '食品':
+        return 30; // 食品默认30天
+      case '药品':
+        return 365; // 药品默认1年
+      case '化妆品':
+        return 365; // 化妆品默认1年（未开封）
+      case '日用品':
+        return 730; // 日用品默认2年
+      default:
+        return 90; // 其他默认90天
+    }
   }
 
   /// 从文本解析结果
@@ -306,7 +409,7 @@ class AIService {
     // 简单文本解析
     String name = '未知物品';
     String category = PresetCategories.food;
-    DateTime expiryDate = DateTime.now().add(const Duration(days: 7));
+    DateTime expiryDate = _calculateExpiryDate(category: category);
 
     // 尝试提取名称
     final nameMatch = RegExp(r'名称[：:]\s*(.+)').firstMatch(text);
@@ -317,6 +420,10 @@ class AIService {
     // 尝试提取分类
     if (text.contains('药') || text.toLowerCase().contains('drug')) {
       category = PresetCategories.drug;
+    } else if (text.contains('化妆') || text.contains('护肤')) {
+      category = '化妆品';
+    } else if (text.contains('日用')) {
+      category = '日用品';
     }
 
     // 尝试提取过期日期
@@ -337,47 +444,97 @@ class AIService {
       expiryDate: expiryDate,
       confidence: 0.6,
       rawResponse: text,
+      dateVisible: false,
+      expiryInfoSource: '默认估算',
     );
   }
 
   /// 默认图片识别提示词
   String _getDefaultImagePrompt() {
+    final today = DateTime.now().toString().split(' ')[0];
     return '''
-请识别图片中的物品信息，并以JSON格式返回以下字段：
+你是一个物品信息识别助手。请仔细分析图片中的物品包装。
+
+【重要规则】
+1. 如果图片模糊或无法识别，confidence < 0.3，name 说明原因
+2. 部分识别 confidence 0.5-0.7
+3. 清晰识别 confidence 0.8-1.0
+
+【日期识别说明 - 特别注意】
+生产日期/过期日期通常不在主标签区域，常见位置：
+- 封口处、瓶盖、拉环附近（最常见）
+- 包装侧面或底部
+- 单独的喷码/压印
+- 贴纸标签
+
+请仔细检查图片中所有可见区域。如果：
+- 没有看到明确的日期 → date_visible 设为 false
+- 只看到生产日期+保质期 → 需推算过期日期
+- 明确看到过期日期 → 直接使用
+
+【分类选项】
+"食品"、"药品"、"化妆品"、"日用品"、"其他"
+
+【返回格式】严格返回JSON，不要添加其他文字：
 {
-  "name": "物品名称",
-  "category": "分类（如：食品、药品等）",
+  "name": "物品名称（必填）",
+  "category": "分类（必填，必须是上述分类选项之一）",
   "sub_category": "子分类（可选）",
   "brand": "品牌（可选）",
   "specification": "规格（可选）",
-  "purchase_date": "购买日期（YYYY-MM-DD格式，可选）",
-  "expiry_date": "过期日期（YYYY-MM-DD格式）",
-  "confidence": 0.8
+  "date_visible": false,
+  "date_location_hint": "日期可能在封口处或瓶盖，建议补拍",
+  "production_date": "生产日期（YYYY-MM-DD，可见则填）",
+  "shelf_life": "保质期（如：12个月、180天，可见则填）",
+  "expiry_date": "过期日期（YYYY-MM-DD，尽量推算）",
+  "expiry_info_source": "标签显示/推算/默认估算",
+  "confidence": 0.85
 }
 
-请只返回JSON，不要包含其他文字。
+今天日期：$today
 ''';
   }
 
   /// 默认语音解析提示词
   String _getDefaultVoicePrompt(String text) {
+    final today = DateTime.now().toString().split(' ')[0];
     return '''
-请解析以下用户输入，提取物品信息并以JSON格式返回：
+你是一个语音输入解析助手。请解析用户的语音输入，提取物品信息。
+
+【用户输入】
 "$text"
 
-返回格式：
+【重要规则】
+1. 如果用户输入模糊或无法解析，confidence < 0.3
+2. 部分可解析 confidence 0.5-0.7
+3. 清晰完整 confidence 0.8-1.0
+
+【分类选项】
+"食品"、"药品"、"化妆品"、"日用品"、"其他"
+
+【日期处理规则】
+- "明天过期" → 过期日期为今天+1天
+- "下周过期" → 过期日期为今天+7天
+- "保质期3个月" → 根据购买日期推算
+- 如果用户没提日期 → expiry_info_source 设为"默认估算"，根据物品类型给合理默认值
+
+【返回格式】严格返回JSON，不要添加其他文字：
 {
-  "name": "物品名称",
-  "category": "分类（如：食品、药品等）",
+  "name": "物品名称（必填）",
+  "category": "分类（必填，必须是上述分类选项之一）",
   "sub_category": "子分类（可选）",
   "brand": "品牌（可选）",
   "specification": "规格（可选）",
-  "purchase_date": "购买日期（YYYY-MM-DD格式，可选）",
-  "expiry_date": "过期日期（YYYY-MM-DD格式）",
-  "confidence": 0.8
+  "date_visible": true,
+  "date_location_hint": "",
+  "production_date": "生产日期（YYYY-MM-DD，用户提及则填）",
+  "shelf_life": "保质期（用户提及则填）",
+  "expiry_date": "过期日期（YYYY-MM-DD，必填）",
+  "expiry_info_source": "用户指定/推算/默认估算",
+  "confidence": 0.85
 }
 
-请只返回JSON，不要包含其他文字。
+今天日期：$today
 ''';
   }
 

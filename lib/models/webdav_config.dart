@@ -50,6 +50,14 @@ class WebDAVConfig {
 
   /// 从JSON创建
   factory WebDAVConfig.fromJson(Map<String, dynamic> json) {
+    // 安全解析布尔值（SQLite存储为0/1整数）
+    bool parseBool(dynamic value, {bool defaultValue = false}) {
+      if (value == null) return defaultValue;
+      if (value is bool) return value;
+      if (value is int) return value != 0;
+      return defaultValue;
+    }
+
     return WebDAVConfig(
       id: json['id'] as String,
       serverUrl: json['server_url'] as String? ?? '',
@@ -57,8 +65,8 @@ class WebDAVConfig {
       password: json['password'] as String? ?? '',
       remotePath: json['remote_path'] as String? ?? '/guo_qi_le_me',
       syncInterval: json['sync_interval'] as int? ?? 30,
-      autoSync: json['auto_sync'] as bool? ?? false,
-      enabled: json['enabled'] as bool? ?? false,
+      autoSync: parseBool(json['auto_sync']),
+      enabled: parseBool(json['enabled']),
       lastSyncAt: json['last_sync_at'] != null
           ? DateTime.parse(json['last_sync_at'] as String)
           : null,

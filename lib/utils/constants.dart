@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 /// 应用常量定义
 class AppConstants {
   AppConstants._();
@@ -28,8 +30,43 @@ class PresetCategories {
 
   static const String food = '食品';
   static const String drug = '药品';
+  static const String cosmetic = '化妆品';
+  static const String daily = '日用品';
+  static const String other = '其他';
 
-  static List<String> get defaults => [food, drug];
+  static List<String> get defaults => [food, drug, cosmetic, daily, other];
+
+  /// 根据分类名称返回对应图标
+  static IconData getIcon(String? category) {
+    switch (category) {
+      case food:
+        return Icons.restaurant;
+      case drug:
+        return Icons.medication;
+      case cosmetic:
+        return Icons.face_retouching_natural;
+      case daily:
+        return Icons.home;
+      default:
+        return Icons.inventory_2;
+    }
+  }
+
+  /// 根据分类名称返回默认保质期（天数）
+  static int getDefaultShelfLife(String? category) {
+    switch (category) {
+      case food:
+        return 30;
+      case drug:
+        return 365;
+      case cosmetic:
+        return 365;
+      case daily:
+        return 730;
+      default:
+        return 90;
+    }
+  }
 }
 
 /// 物品状态

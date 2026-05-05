@@ -20,7 +20,7 @@ migrate_working_dir/
 
 # VS Code
 # 如果团队统一配置，可以取消注释下面这行
- .vscode/
+.vscode/
 
 # Flutter/Dart/Pub related
 **/doc/api/

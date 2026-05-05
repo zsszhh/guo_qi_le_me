@@ -38,14 +38,22 @@ class ReminderConfig {
 
   /// 从JSON创建
   factory ReminderConfig.fromJson(Map<String, dynamic> json) {
+    // 安全解析布尔值（SQLite存储为0/1整数）
+    bool parseBool(dynamic value, {bool defaultValue = true}) {
+      if (value == null) return defaultValue;
+      if (value is bool) return value;
+      if (value is int) return value != 0;
+      return defaultValue;
+    }
+
     return ReminderConfig(
       id: json['id'] as String,
-      remind3Days: json['remind_3_days'] as bool? ?? true,
-      remind7Days: json['remind_7_days'] as bool? ?? true,
-      remind14Days: json['remind_14_days'] as bool? ?? true,
-      pushNotification: json['push_notification'] as bool? ?? true,
+      remind3Days: parseBool(json['remind_3_days']),
+      remind7Days: parseBool(json['remind_7_days']),
+      remind14Days: parseBool(json['remind_14_days']),
+      pushNotification: parseBool(json['push_notification']),
       reminderTime: json['reminder_time'] as String? ?? '09:00',
-      soundEnabled: json['sound_enabled'] as bool? ?? true,
+      soundEnabled: parseBool(json['sound_enabled']),
       quietHoursStart: json['quiet_hours_start'] as String?,
       quietHoursEnd: json['quiet_hours_end'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),

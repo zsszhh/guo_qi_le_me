@@ -18,6 +18,8 @@ class ItemCard extends StatelessWidget {
   final String? location;
   final String? imageUrl;
   final ItemStatus? status;       // 可选状态，优先使用此状态而非计算
+  final int quantity;             // 数量
+  final String unit;              // 单位
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
 
@@ -31,6 +33,8 @@ class ItemCard extends StatelessWidget {
     this.location,
     this.imageUrl,
     this.status,                   // 新增参数
+    this.quantity = 1,
+    this.unit = '个',
     this.onTap,
     this.onLongPress,
   });
@@ -48,121 +52,151 @@ class ItemCard extends StatelessWidget {
         onTap: onTap,
         onLongPress: onLongPress,
         borderRadius: AppRadius.large,
-        child: Stack(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceContainerLowest,
-                borderRadius: AppRadius.large,
-                border: Border.all(
-                  color: AppColors.outlineVariant.withOpacity(0.3),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: AppRadius.large,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
               ),
-              child: Row(
-                children: [
-                  // 图标/图片
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceContainer,
-                      borderRadius: AppRadius.medium,
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: AppRadius.large,
+            child: Stack(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceContainerLowest,
+                    border: Border.all(
+                      color: AppColors.outlineVariant.withOpacity(0.3),
                     ),
-                    child: Center(
-                      child: Icon(
-                        categoryIcon,
-                        color: AppColors.primary,
-                        size: 24,
+                  ),
+                  child: Row(
+                    children: [
+                      // 图标/图片
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceContainer,
+                          borderRadius: AppRadius.medium,
+                        ),
+                        child: Center(
+                          child: Icon(
+                            categoryIcon,
+                            color: AppColors.primary,
+                            size: 24,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  // 信息
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          name,
-                          style: AppTypography.bodyBase.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                      const SizedBox(width: AppSpacing.sm),
+                      // 信息
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              name,
+                              style: AppTypography.bodyBase.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 2),
+                            _buildSubtitle(),
+                          ],
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          _buildSubtitle(),
-                          style: AppTypography.bodySm.copyWith(
-                            color: AppColors.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                      // 状态徽章
+                      StatusBadge(
+                        status: effectiveStatus,
+                        daysRemaining: daysRemaining,
+                        compact: false,
+                      ),
+                    ],
                   ),
-                  // 状态徽章
-                  StatusBadge(
-                    status: effectiveStatus,
-                    daysRemaining: daysRemaining,
-                    compact: false,
+                ),
+                // 底部进度条
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: ExpiryProgressBar(
+                    purchaseDate: purchaseDate,
+                    expiryDate: expiryDate,
                   ),
-                ],
-              ),
-            ),
-            // 底部进度条
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(AppRadius.lg),
-                  bottomRight: Radius.circular(AppRadius.lg),
                 ),
-                child: ExpiryProgressBar(
-                  purchaseDate: purchaseDate,
-                  expiryDate: expiryDate,
-                ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 
   IconData _getCategoryIcon() {
-    // 根据分类名称返回图标
-    if (category == PresetCategories.food) {
-      return Icons.restaurant;
-    } else if (category == PresetCategories.drug) {
-      return Icons.medication;
-    }
-    // 其他分类返回默认图标
-    return Icons.inventory_2;
+    return PresetCategories.getIcon(category);
   }
 
-  String _buildSubtitle() {
-    final parts = <String>[];
-    if (location != null) {
-      parts.add(location!);
-    }
+  Widget _buildSubtitle() {
+    final parts = <Widget>[];
     final days = app_utils.DateUtils.daysRemaining(purchaseDate);
-    if (days < 0) {
-      parts.add('${-days}天前添加');
-    } else if (days == 0) {
-      parts.add('今天添加');
-    } else {
-      parts.add('$days天前添加');
+    final timeText = days < 0
+        ? '${-days}天前添加'
+        : days == 0
+            ? '今天添加'
+            : '$days天前添加';
+
+    if (location != null) {
+      parts.add(Text(
+        location!,
+        style: AppTypography.bodySm.copyWith(
+          color: AppColors.primary,
+          fontSize: 12,
+        ),
+      ));
     }
-    return parts.join(' · ');
+    if (quantity > 1) {
+      if (parts.isNotEmpty) parts.add(_buildDot());
+      parts.add(Text(
+        '$quantity个',
+        style: AppTypography.bodySm.copyWith(
+          color: AppColors.onSurface,
+          fontSize: 12,
+        ),
+      ));
+    }
+    if (parts.isNotEmpty) parts.add(_buildDot());
+    parts.add(Text(
+      timeText,
+      style: AppTypography.bodySm.copyWith(
+        color: AppColors.onSurfaceVariant,
+        fontSize: 12,
+      ),
+    ));
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
+      children: parts,
+    );
+  }
+
+  Widget _buildDot() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Text(
+        '·',
+        style: AppTypography.bodySm.copyWith(
+          color: AppColors.onSurfaceVariant,
+          fontSize: 12,
+        ),
+      ),
+    );
   }
 }

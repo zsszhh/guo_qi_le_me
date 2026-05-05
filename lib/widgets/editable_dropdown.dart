@@ -61,17 +61,17 @@ class _EditableDropdownState extends State<EditableDropdown> {
   Future<void> _loadOptions() async {
     setState(() => _isLoading = true);
 
+    // 获取完整选项（预设 + 自定义）
+    final allOptions = await _optionService.getOptions(
+      widget.type,
+      category: widget.category,
+    );
+    
+    // 获取自定义选项的 ID
     final customOptions = await _getCustomOptions();
-
-    // 合并预设选项
-    final allOptions = <String>[...widget.presetOptions];
     final customIds = <String>{};
-
     for (final option in customOptions) {
-      if (!allOptions.contains(option.value)) {
-        allOptions.add(option.value);
-        customIds.add(option.id);
-      }
+      customIds.add(option.id);
     }
 
     setState(() {
