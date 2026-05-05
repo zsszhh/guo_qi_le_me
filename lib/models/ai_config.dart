@@ -10,6 +10,7 @@ class AIConfig {
   final String? displayName;    // 用户自定义名称
   final int timeoutSeconds;
   final bool enabled;
+  final bool isDefault;         // 是否为默认配置
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -22,6 +23,7 @@ class AIConfig {
     this.displayName,
     this.timeoutSeconds = 30,
     this.enabled = true,
+    this.isDefault = false,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -34,6 +36,7 @@ class AIConfig {
       provider: AIProvider.doubao,
       apiKey: '',
       defaultModel: 'doubao-1.5-vision-pro',
+      isDefault: true,
       createdAt: now,
       updatedAt: now,
     );
@@ -41,6 +44,14 @@ class AIConfig {
 
   /// 从JSON创建
   factory AIConfig.fromJson(Map<String, dynamic> json) {
+    // 安全解析布尔值（SQLite存储为0/1整数）
+    bool parseBool(dynamic value, {bool defaultValue = true}) {
+      if (value == null) return defaultValue;
+      if (value is bool) return value;
+      if (value is int) return value != 0;
+      return defaultValue;
+    }
+
     return AIConfig(
       id: json['id'] as String,
       provider: AIProvider.values.firstWhere(
@@ -52,7 +63,8 @@ class AIConfig {
       baseUrl: json['base_url'] as String?,
       displayName: json['display_name'] as String?,
       timeoutSeconds: json['timeout_seconds'] as int? ?? 30,
-      enabled: json['enabled'] as bool? ?? true,
+      enabled: parseBool(json['enabled'], defaultValue: true),
+      isDefault: parseBool(json['is_default'], defaultValue: false),
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
     );
@@ -69,6 +81,7 @@ class AIConfig {
       'display_name': displayName,
       'timeout_seconds': timeoutSeconds,
       'enabled': enabled,
+      'is_default': isDefault ? 1 : 0,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
@@ -84,6 +97,7 @@ class AIConfig {
     String? displayName,
     int? timeoutSeconds,
     bool? enabled,
+    bool? isDefault,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -96,6 +110,7 @@ class AIConfig {
       displayName: displayName ?? this.displayName,
       timeoutSeconds: timeoutSeconds ?? this.timeoutSeconds,
       enabled: enabled ?? this.enabled,
+      isDefault: isDefault ?? this.isDefault,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
