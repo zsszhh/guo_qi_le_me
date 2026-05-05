@@ -24,7 +24,7 @@ class DatabaseService {
   static String get databaseName => _databaseName;
 
   /// 数据库版本
-  static const int _databaseVersion = 3;
+  static const int _databaseVersion = 4;
 
   /// 表名常量
   static const String tableItems = 'items';
@@ -158,6 +158,7 @@ class DatabaseService {
         display_name TEXT,
         timeout_seconds INTEGER DEFAULT 30,
         enabled INTEGER DEFAULT 1,
+        is_default INTEGER DEFAULT 0,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
       )
@@ -244,6 +245,13 @@ class DatabaseService {
 
       // 创建索引
       await db.execute('CREATE INDEX IF NOT EXISTS idx_product_images_name ON $tableProductImages (name)');
+    }
+
+    // 版本3到版本4：添加 is_default 字段支持多配置
+    if (oldVersion < 4) {
+      await db.execute('ALTER TABLE $tableAIConfigs ADD COLUMN is_default INTEGER DEFAULT 0');
+      // 将现有配置设为默认
+      await db.execute('UPDATE $tableAIConfigs SET is_default = 1 WHERE enabled = 1');
     }
   }
 
@@ -565,21 +573,155 @@ class DatabaseService {
 
   // ==================== AI配置操作 ====================
 
-  /// 获取AI配置（单例）
+  /// 获取所有AI配置列表，按 is_default DESC, updated_at DESC 排序
+  Future<List<AIConfig>> getAllAIConfigs() async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      tableAIConfigs,
+      orderBy: 'is_default DESC, updated_at DESC',
+    );
+    return maps.map((map) => AIConfig.fromJson(map)).toList();
+  }
+
+  /// 获取AI配置（优先返回 is_default=1 的配置，否则返回第一个配置）
   Future<AIConfig?> getAIConfig() async {
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(tableAIConfigs);
+    // 优先获取默认配置
+    final List<Map<String, dynamic>> defaultMaps = await db.query(
+      tableAIConfigs,
+      where: 'is_default = ?',
+      whereArgs: [1],
+      limit: 1,
+    );
+    if (defaultMaps.isNotEmpty) {
+      return AIConfig.fromJson(defaultMaps.first);
+    }
+    // 如果没有默认配置，返回第一个配置
+    final List<Map<String, dynamic>> maps = await db.query(
+      tableAIConfigs,
+      orderBy: 'updated_at DESC',
+      limit: 1,
+    );
     if (maps.isEmpty) return null;
     return AIConfig.fromJson(maps.first);
   }
 
-  /// 保存AI配置
+  /// 根据ID获取AI配置
+  Future<AIConfig?> getAIConfigById(String id) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      tableAIConfigs,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    if (maps.isEmpty) return null;
+    return AIConfig.fromJson(maps.first);
+  }
+
+  /// 保存AI配置（新增或更新）
   Future<void> saveAIConfig(AIConfig config) async {
     final db = await database;
     await db.insert(
       tableAIConfigs,
       config.toJson(),
       conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  /// 设置默认AI配置
+  Future<void> setDefaultAIConfig(String id) async {
+    final db = await database;
+    // 先清除所有默认标记
+    await db.update(
+      tableAIConfigs,
+      {'is_default': 0},
+    );
+    // 设置指定配置为默认
+    await db.update(
+      tableAIConfigs,
+      {'is_default': 1, 'updated_at': DateTime.now().toIso8601String()},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  /// 删除AI配置（处理默认配置切换逻辑）
+  Future<void> deleteAIConfig(String id) async {
+    final db = await database;
+
+    // 检查是否为默认配置
+    final config = await getAIConfigById(id);
+    if (config == null) return;
+
+    final isDefault = config.isDefault;
+
+    // 删除配置
+    await db.delete(
+      tableAIConfigs,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+
+    // 如果删除的是默认配置，将第一个配置设为默认
+    if (isDefault) {
+      final remaining = await db.query(
+        tableAIConfigs,
+        orderBy: 'updated_at DESC',
+        limit: 1,
+      );
+      if (remaining.isNotEmpty) {
+        await db.update(
+          tableAIConfigs,
+          {'is_default': 1},
+          where: 'id = ?',
+          whereArgs: [remaining.first['id']],
+        );
+      }
+    }
+  }
+
+  /// 复制AI配置
+  Future<AIConfig> duplicateAIConfig(String id) async {
+    final db = await database;
+    final original = await getAIConfigById(id);
+    if (original == null) {
+      throw Exception('AI配置不存在: $id');
+    }
+
+    final now = DateTime.now();
+    final newId = '${id}_copy_${now.millisecondsSinceEpoch}';
+    final displayName = original.displayName != null
+        ? '${original.displayName} (副本)'
+        : null;
+
+    final duplicated = original.copyWith(
+      id: newId,
+      displayName: displayName,
+      isDefault: false,
+      createdAt: now,
+      updatedAt: now,
+    );
+
+    await db.insert(
+      tableAIConfigs,
+      duplicated.toJson(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+
+    return duplicated;
+  }
+
+  /// 更新AI配置的 enabled 状态
+  Future<void> updateAIConfigEnabled(String id, bool enabled) async {
+    final db = await database;
+    await db.update(
+      tableAIConfigs,
+      {
+        'enabled': enabled ? 1 : 0,
+        'updated_at': DateTime.now().toIso8601String(),
+      },
+      where: 'id = ?',
+      whereArgs: [id],
     );
   }
 
