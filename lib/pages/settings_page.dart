@@ -3,7 +3,7 @@ import '../theme/colors.dart';
 import '../theme/typography.dart';
 import '../theme/spacing.dart';
 import '../services/backup_service.dart';
-import 'ai_config_page.dart';
+import 'ai_config_list_page.dart';
 import 'webdav_config_page.dart';
 import 'reminder_config_page.dart';
 import 'reminder_center_page.dart';
@@ -37,11 +37,11 @@ class SettingsPage extends StatelessWidget {
               _buildSettingsItem(
                 icon: Icons.smart_toy,
                 title: 'AI 服务配置',
-                subtitle: '配置大模型 API',
+                subtitle: '管理多个AI服务提供商',
                 onTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (context) => const AIConfigPage(),
+                      builder: (context) => const AIConfigListPage(),
                     ),
                   );
                 },
@@ -142,20 +142,6 @@ class SettingsPage extends StatelessWidget {
                     MaterialPageRoute(
                       builder: (context) => const PrivacyPolicyPage(),
                     ),
-                  );
-                },
-              ),
-              Divider(
-                height: 1,
-                color: AppColors.outlineVariant.withOpacity(0.3),
-              ),
-              _buildSettingsItem(
-                icon: Icons.help_outline,
-                title: '帮助与反馈',
-                subtitle: '常见问题和意见反馈',
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('帮助页面即将推出')),
                   );
                 },
               ),
