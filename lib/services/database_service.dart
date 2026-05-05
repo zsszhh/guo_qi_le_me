@@ -631,18 +631,20 @@ class DatabaseService {
   /// 设置默认AI配置
   Future<void> setDefaultAIConfig(String id) async {
     final db = await database;
-    // 先清除所有默认标记
-    await db.update(
-      tableAIConfigs,
-      {'is_default': 0},
-    );
-    // 设置指定配置为默认
-    await db.update(
-      tableAIConfigs,
-      {'is_default': 1, 'updated_at': DateTime.now().toIso8601String()},
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    await db.transaction((txn) async {
+      // 先清除所有默认标记
+      await txn.update(
+        tableAIConfigs,
+        {'is_default': 0},
+      );
+      // 设置指定配置为默认
+      await txn.update(
+        tableAIConfigs,
+        {'is_default': 1, 'updated_at': DateTime.now().toIso8601String()},
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    });
   }
 
   /// 删除AI配置（处理默认配置切换逻辑）
@@ -655,29 +657,31 @@ class DatabaseService {
 
     final isDefault = config.isDefault;
 
-    // 删除配置
-    await db.delete(
-      tableAIConfigs,
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-
-    // 如果删除的是默认配置，将第一个配置设为默认
-    if (isDefault) {
-      final remaining = await db.query(
+    await db.transaction((txn) async {
+      // 删除配置
+      await txn.delete(
         tableAIConfigs,
-        orderBy: 'updated_at DESC',
-        limit: 1,
+        where: 'id = ?',
+        whereArgs: [id],
       );
-      if (remaining.isNotEmpty) {
-        await db.update(
+
+      // 如果删除的是默认配置，将第一个配置设为默认
+      if (isDefault) {
+        final remaining = await txn.query(
           tableAIConfigs,
-          {'is_default': 1},
-          where: 'id = ?',
-          whereArgs: [remaining.first['id']],
+          orderBy: 'updated_at DESC',
+          limit: 1,
         );
+        if (remaining.isNotEmpty) {
+          await txn.update(
+            tableAIConfigs,
+            {'is_default': 1},
+            where: 'id = ?',
+            whereArgs: [remaining.first['id']],
+          );
+        }
       }
-    }
+    });
   }
 
   /// 复制AI配置
