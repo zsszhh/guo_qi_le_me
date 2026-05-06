@@ -1,5 +1,3 @@
-import '../utils/constants.dart';
-
 /// 提醒类型枚举
 enum ReminderType {
   threeDays,

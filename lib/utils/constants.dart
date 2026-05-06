@@ -103,15 +103,3 @@ enum AIProvider {
   final bool isPreset;
   const AIProvider(this.name, {this.isPreset = false});
 }
-
-/// 提醒类型
-enum ReminderType {
-  threeDays('3天', 3),
-  sevenDays('7天', 7),
-  fourteenDays('14天', 14),
-  expired('已过期', 0);
-
-  final String label;
-  final int days;
-  const ReminderType(this.label, this.days);
-}
