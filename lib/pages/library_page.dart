@@ -244,7 +244,9 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                   expiryDate: item.expiryDate,
                   location: item.location,
                   imageUrl: item.imageUrl,
-                  status: item.status,    // 传入物品实际状态
+                  status: item.status,
+                  quantity: item.quantity,
+                  unit: item.unit,
                   onTap: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
