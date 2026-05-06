@@ -4,7 +4,7 @@ import '../theme/typography.dart';
 import '../theme/spacing.dart';
 
 /// 生命周期时间轴
-class LifecycleTimeline extends StatelessWidget {
+class LifecycleTimeline extends StatefulWidget {
   final DateTime purchaseDate;
   final DateTime expiryDate;
   final int daysRemaining;
@@ -17,10 +17,46 @@ class LifecycleTimeline extends StatelessWidget {
   });
 
   @override
+  State<LifecycleTimeline> createState() => _LifecycleTimelineState();
+}
+
+class _LifecycleTimelineState extends State<LifecycleTimeline>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    );
+    _animation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOutCubic,
+    );
+    // 延迟启动动画，确保用户能看到
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted) {
+          _controller.forward();
+        }
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final totalDays = expiryDate.difference(purchaseDate).inDays;
-    final elapsedDays = DateTime.now().difference(purchaseDate).inDays;
-    final progress = totalDays > 0 ? (elapsedDays / totalDays).clamp(0.0, 1.0) : 1.0;
+    final totalDays = widget.expiryDate.difference(widget.purchaseDate).inDays;
+    final elapsedDays = DateTime.now().difference(widget.purchaseDate).inDays;
+    final targetProgress = totalDays > 0 ? (elapsedDays / totalDays).clamp(0.0, 1.0) : 1.0;
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -55,13 +91,11 @@ class LifecycleTimeline extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.lg),
-          // 使用 TweenAnimationBuilder 动画化整个进度区域
-          TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0.0, end: progress),
-            duration: const Duration(milliseconds: 800),
-            curve: Curves.easeOutCubic,
-            builder: (context, animatedProgress, child) {
-              return _buildProgressSection(animatedProgress);
+          AnimatedBuilder(
+            animation: _animation,
+            builder: (context, child) {
+              final progress = _animation.value * targetProgress;
+              return _buildProgressSection(progress);
             },
           ),
         ],
@@ -69,86 +103,93 @@ class LifecycleTimeline extends StatelessWidget {
     );
   }
 
-  Widget _buildProgressSection(double animatedProgress) {
-    final progressColor = _getProgressColor(animatedProgress);
-    final todayColor = daysRemaining < 0 ? AppColors.error : AppColors.primary;
+  Widget _buildProgressSection(double progress) {
+    final progressColor = _getProgressColor(progress);
+    final todayColor = widget.daysRemaining < 0 ? AppColors.error : AppColors.primary;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final totalWidth = constraints.maxWidth;
-
-        return Stack(
-          clipBehavior: Clip.none,
-          children: [
-            // 进度条（背景）
-            Container(
-              height: 12,
-              width: totalWidth,
-              decoration: BoxDecoration(
-                color: AppColors.surfaceVariant,
-                borderRadius: BorderRadius.circular(AppRadius.full),
-              ),
-            ),
-            // 进度条（填充）
-            Container(
-              height: 12,
-              width: totalWidth * animatedProgress,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    AppColors.primary,
-                    progressColor,
-                  ],
+    return Column(
+      children: [
+        // 进度条容器
+        SizedBox(
+          height: 12,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.full),
+            child: Stack(
+              children: [
+                // 背景轨道
+                Container(
+                  height: 12,
+                  width: double.infinity,
+                  color: AppColors.surfaceVariant,
                 ),
-                borderRadius: BorderRadius.circular(AppRadius.full),
-              ),
+                // 进度填充
+                FractionallySizedBox(
+                  widthFactor: progress > 0 ? progress : 0,
+                  child: Container(
+                    height: 12,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          AppColors.primary,
+                          progressColor,
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-            // 购买日标记点（左端）
-            Positioned(
-              left: 0,
-              top: -2,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        // 标记点行
+        Row(
+          children: [
+            // 购买日
+            Expanded(
               child: _buildMarker(
                 '购买',
-                _formatDate(purchaseDate),
+                _formatDate(widget.purchaseDate),
                 AppColors.outlineVariant,
-                isToday: false,
               ),
             ),
-            // 今天标记点（根据进度定位）
-            Positioned(
-              left: totalWidth * animatedProgress - 8,
-              top: -2,
-              child: _buildMarker(
-                '今天',
-                '',
-                todayColor,
-                isToday: true,
-              ),
+            // 今天 - 使用 Spacer 来定位
+            Expanded(
+              flex: (progress * 1000).toInt().clamp(1, 999),
+              child: const SizedBox(),
             ),
-            // 过期日标记点（右端）
-            Positioned(
-              right: 0,
-              top: -2,
+            _buildMarker(
+              '今天',
+              '',
+              todayColor,
+              isToday: true,
+            ),
+            Expanded(
+              flex: ((1 - progress) * 1000).toInt().clamp(1, 999),
+              child: const SizedBox(),
+            ),
+            // 过期日
+            Expanded(
               child: _buildMarker(
                 '过期',
-                _formatDate(expiryDate),
+                _formatDate(widget.expiryDate),
                 AppColors.outlineVariant,
-                isToday: false,
               ),
             ),
           ],
-        );
-      },
+        ),
+      ],
     );
   }
 
-  Widget _buildMarker(String label, String date, Color color, {required bool isToday}) {
+  Widget _buildMarker(String label, String date, Color color, {bool isToday = false}) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         // 圆点
         Container(
-          width: isToday ? 16 : 8,
-          height: isToday ? 16 : 8,
+          width: isToday ? 12 : 6,
+          height: isToday ? 12 : 6,
           decoration: BoxDecoration(
             color: color,
             shape: BoxShape.circle,
@@ -161,9 +202,9 @@ class LifecycleTimeline extends StatelessWidget {
             boxShadow: isToday
                 ? [
                     BoxShadow(
-                      color: color.withValues(alpha: 0.3),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
+                      color: color.withValues(alpha: 0.4),
+                      blurRadius: 4,
+                      spreadRadius: 1,
                     ),
                   ]
                 : null,
@@ -179,8 +220,8 @@ class LifecycleTimeline extends StatelessWidget {
             fontSize: 10,
           ),
         ),
-        // 日期（今天不显示日期）
-        if (!isToday && date.isNotEmpty)
+        // 日期（今天不显示）
+        if (!isToday)
           Text(
             date,
             style: AppTypography.labelCaps.copyWith(
