@@ -414,6 +414,6 @@ final itemStatsProvider = Provider<ItemStats>((ref) {
 
 /// 最近添加的物品Provider
 final recentItemsProvider = FutureProvider<List<Item>>((ref) async {
-  final dbService = DatabaseService();
+  final dbService = ref.watch(databaseServiceProvider);
   return await dbService.getRecentItems(limit: 5);
 });
