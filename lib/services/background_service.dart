@@ -70,6 +70,7 @@ class BackgroundService {
   /// 执行提醒检查（供后台任务回调使用）
   Future<void> performReminderCheck() async {
     await _notificationService.checkAndSendReminders();
+    await _notificationService.updateBadge();
   }
 }
 
@@ -83,6 +84,9 @@ void _callbackDispatcher() {
 
     // 检查并发送提醒
     await notificationService.checkAndSendReminders();
+
+    // 更新角标
+    await notificationService.updateBadge();
 
     return Future.value(true);
   });

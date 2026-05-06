@@ -102,3 +102,6 @@ credentials.json
 
 # OpenSpec (如果需要版本控制可删除此行)
 openspec/
+
+
+*.psd

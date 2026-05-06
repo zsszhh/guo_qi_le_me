@@ -4,7 +4,7 @@ import '../theme/typography.dart';
 import '../theme/spacing.dart';
 
 /// 生命周期时间轴
-class LifecycleTimeline extends StatefulWidget {
+class LifecycleTimeline extends StatelessWidget {
   final DateTime purchaseDate;
   final DateTime expiryDate;
   final int daysRemaining;
@@ -17,52 +17,17 @@ class LifecycleTimeline extends StatefulWidget {
   });
 
   @override
-  State<LifecycleTimeline> createState() => _LifecycleTimelineState();
-}
-
-class _LifecycleTimelineState extends State<LifecycleTimeline>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 1200),
-      vsync: this,
-    );
-    _animation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutCubic,
-    );
-    // 延迟启动动画，确保用户能看到
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Future.delayed(const Duration(milliseconds: 100), () {
-        if (mounted) {
-          _controller.forward();
-        }
-      });
-    });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final totalDays = widget.expiryDate.difference(widget.purchaseDate).inDays;
-    final elapsedDays = DateTime.now().difference(widget.purchaseDate).inDays;
-    final targetProgress = totalDays > 0 ? (elapsedDays / totalDays).clamp(0.0, 1.0) : 1.0;
+    final totalDays = expiryDate.difference(purchaseDate).inDays;
+    final elapsedDays = DateTime.now().difference(purchaseDate).inDays;
+    final progress = totalDays > 0 ? (elapsedDays / totalDays).clamp(0.0, 1.0) : 1.0;
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(AppRadius.xl),
+        border: Border.all(color: AppColors.surfaceVariant),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -76,7 +41,7 @@ class _LifecycleTimelineState extends State<LifecycleTimeline>
         children: [
           Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.timeline,
                 color: AppColors.primary,
                 size: 20,
@@ -90,12 +55,13 @@ class _LifecycleTimelineState extends State<LifecycleTimeline>
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.lg),
-          AnimatedBuilder(
-            animation: _animation,
-            builder: (context, child) {
-              final progress = _animation.value * targetProgress;
-              return _buildProgressSection(progress);
+          const SizedBox(height: AppSpacing.xl),
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.0, end: progress),
+            duration: const Duration(milliseconds: 800),
+            curve: Curves.easeOutCubic,
+            builder: (context, animatedProgress, child) {
+              return _buildTimelineSection(animatedProgress);
             },
           ),
         ],
@@ -103,143 +69,174 @@ class _LifecycleTimelineState extends State<LifecycleTimeline>
     );
   }
 
-  Widget _buildProgressSection(double progress) {
-    final progressColor = _getProgressColor(progress);
-    final todayColor = widget.daysRemaining < 0 ? AppColors.error : AppColors.primary;
+  Widget _buildTimelineSection(double progress) {
+    final progressColor = daysRemaining < 0
+        ? AppColors.error
+        : (daysRemaining <= 3 ? AppColors.error : AppColors.primary);
+    final todayColor = AppColors.error;
 
-    return Column(
-      children: [
-        // 进度条容器
-        SizedBox(
-          height: 12,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(AppRadius.full),
-            child: Stack(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final totalWidth = constraints.maxWidth;
+
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            // 进度条 + 端点文字
+            Column(
               children: [
-                // 背景轨道
-                Container(
+                // 进度条
+                SizedBox(
                   height: 12,
-                  width: double.infinity,
-                  color: AppColors.surfaceVariant,
-                ),
-                // 进度填充
-                FractionallySizedBox(
-                  widthFactor: progress > 0 ? progress : 0,
-                  child: Container(
-                    height: 12,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          AppColors.primary,
-                          progressColor,
-                        ],
+                  child: Stack(
+                    children: [
+                      // 背景轨道
+                      Container(
+                        height: 12,
+                        width: totalWidth,
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceVariant,
+                          borderRadius: BorderRadius.circular(AppRadius.full),
+                        ),
                       ),
-                    ),
+                      // 进度填充
+                      Container(
+                        height: 12,
+                        width: totalWidth * progress,
+                        decoration: BoxDecoration(
+                          color: progressColor,
+                          borderRadius: BorderRadius.only(
+                            topLeft: const Radius.circular(AppRadius.full),
+                            bottomLeft: const Radius.circular(AppRadius.full),
+                            topRight: Radius.circular(progress >= 1.0 ? AppRadius.full : 4),
+                            bottomRight: Radius.circular(progress >= 1.0 ? AppRadius.full : 4),
+                          ),
+                        ),
+                      ),
+                      // 购买端竖线
+                      Positioned(
+                        left: 4,
+                        top: 0,
+                        child: Container(
+                          width: 3,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: AppColors.outlineVariant,
+                            borderRadius: BorderRadius.circular(1),
+                          ),
+                        ),
+                      ),
+                      // 过期端竖线
+                      Positioned(
+                        right: 4,
+                        top: 0,
+                        child: Container(
+                          width: 3,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: AppColors.outlineVariant,
+                            borderRadius: BorderRadius.circular(1),
+                          ),
+                        ),
+                      ),
+                      // 今天圆点 - 在进度条上
+                      Positioned(
+                        left: totalWidth * progress - 6,
+                        top: 0,
+                        child: Container(
+                          width: 12,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: todayColor,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: AppColors.surface,
+                              width: 2,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: todayColor.withValues(alpha: 0.3),
+                                blurRadius: 4,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 4),
+                // 端点文字行
+                SizedBox(
+                  height: 36,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildEndMarker(
+                        label: '购买',
+                        date: purchaseDate,
+                      ),
+                      _buildEndMarker(
+                        label: '过期',
+                        date: expiryDate,
+                        isRight: true,
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-          ),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        // 标记点行
-        Row(
-          children: [
-            // 购买日
-            Expanded(
-              child: _buildMarker(
-                '购买',
-                _formatDate(widget.purchaseDate),
-                AppColors.outlineVariant,
-              ),
-            ),
-            // 今天 - 使用 Spacer 来定位
-            Expanded(
-              flex: (progress * 1000).toInt().clamp(1, 999),
-              child: const SizedBox(),
-            ),
-            _buildMarker(
-              '今天',
-              '',
-              todayColor,
-              isToday: true,
-            ),
-            Expanded(
-              flex: ((1 - progress) * 1000).toInt().clamp(1, 999),
-              child: const SizedBox(),
-            ),
-            // 过期日
-            Expanded(
-              child: _buildMarker(
-                '过期',
-                _formatDate(widget.expiryDate),
-                AppColors.outlineVariant,
+            // "今天"文字 - 在进度条上方，居中对齐圆点
+            Positioned(
+              left: totalWidth * progress - 24,
+              bottom: 56, // 上移到进度条上方
+              child: SizedBox(
+                width: 48,
+                child: Center(
+                  child: Text(
+                    '今天',
+                    style: AppTypography.labelCaps.copyWith(
+                      color: todayColor,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
               ),
             ),
           ],
-        ),
-      ],
+        );
+      },
     );
   }
 
-  Widget _buildMarker(String label, String date, Color color, {bool isToday = false}) {
+  /// 端点标记（购买/过期）
+  Widget _buildEndMarker({
+    required String label,
+    required DateTime date,
+    bool isRight = false,
+  }) {
     return Column(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: isRight ? CrossAxisAlignment.end : CrossAxisAlignment.start,
       children: [
-        // 圆点
-        Container(
-          width: isToday ? 12 : 6,
-          height: isToday ? 12 : 6,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-            border: isToday
-                ? Border.all(
-                    color: AppColors.surface,
-                    width: 2,
-                  )
-                : null,
-            boxShadow: isToday
-                ? [
-                    BoxShadow(
-                      color: color.withValues(alpha: 0.4),
-                      blurRadius: 4,
-                      spreadRadius: 1,
-                    ),
-                  ]
-                : null,
-          ),
-        ),
-        const SizedBox(height: 4),
-        // 标签
         Text(
           label,
           style: AppTypography.labelCaps.copyWith(
-            color: isToday ? color : AppColors.onSurfaceVariant,
-            fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
-            fontSize: 10,
+            color: AppColors.onSurfaceVariant,
+            fontSize: 12,
           ),
         ),
-        // 日期（今天不显示）
-        if (!isToday)
-          Text(
-            date,
-            style: AppTypography.labelCaps.copyWith(
-              color: AppColors.onSurfaceVariant,
-              fontSize: 10,
-            ),
+        Text(
+          '${date.month}/${date.day}',
+          style: AppTypography.labelCaps.copyWith(
+            color: AppColors.onSurfaceVariant,
+            fontSize: 12,
           ),
+        ),
       ],
     );
-  }
-
-  Color _getProgressColor(double progress) {
-    if (progress >= 0.8) return AppColors.error;
-    if (progress >= 0.5) return AppColors.secondary;
-    return AppColors.primary;
-  }
-
-  String _formatDate(DateTime date) {
-    return '${date.month}/${date.day}';
   }
 }

@@ -38,6 +38,9 @@ void main() async {
   // 检查并发送待处理的提醒
   await notificationService.checkAndSendReminders();
 
+  // 更新应用角标
+  await notificationService.updateBadge();
+
   runApp(GuoQilLeMeApp(navigatorKey: navigatorKey));
 }
 

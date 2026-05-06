@@ -311,9 +311,11 @@ class ItemDetailPage extends ConsumerWidget {
               child: Center(
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      Icons.remove_circle_outline,
+                      Icons.check_circle,
                       size: 18,
                       color: isDisabled
                           ? AppColors.onSurfaceVariant

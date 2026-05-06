@@ -127,12 +127,16 @@ class NotificationService {
     final title = _getNotificationTitle(type);
     final body = _getNotificationBody(item, type);
 
+    // 获取角标数字
+    final badgeCount = await _getBadgeCount();
+
     // 发送通知
     await _showNotification(
       id: item.id.hashCode,
       title: title,
       body: body,
       payload: item.id,
+      badgeNumber: badgeCount,
     );
 
     // 记录提醒日志
@@ -147,13 +151,32 @@ class NotificationService {
     await _dbService.insertReminderLog(log);
   }
 
+  /// 获取角标数字（过期/即将过期的物品数量）
+  Future<int> _getBadgeCount() async {
+    final items = await _dbService.getAllItems();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    return items.where((item) {
+      final expiryDate = DateTime(
+        item.expiryDate.year,
+        item.expiryDate.month,
+        item.expiryDate.day,
+      );
+      final daysRemaining = expiryDate.difference(today).inDays;
+      return daysRemaining <= 3;
+    }).length;
+  }
+
   /// 显示通知
   Future<void> _showNotification({
     required int id,
     required String title,
     required String body,
     String? payload,
+    int badgeNumber = 0,
   }) async {
+    // Android 通知详情（支持角标小圆点）
     final androidDetails = AndroidNotificationDetails(
       'expiry_reminder',
       '过期提醒',
@@ -161,12 +184,15 @@ class NotificationService {
       importance: Importance.high,
       priority: Priority.high,
       showWhen: true,
+      channelShowBadge: true,
     );
 
-    const iosDetails = DarwinNotificationDetails(
+    // iOS 通知详情（设置角标数字）
+    final iosDetails = DarwinNotificationDetails(
       presentAlert: true,
       presentBadge: true,
       presentSound: true,
+      badgeNumber: badgeNumber,
     );
 
     final details = NotificationDetails(
@@ -227,6 +253,53 @@ class NotificationService {
   /// 取消所有通知
   Future<void> cancelAllNotifications() async {
     await _notifications.cancelAll();
+  }
+
+  /// 更新应用角标（供外部调用）
+  Future<void> updateBadge() async {
+    // iOS: 通过发送一个静默通知来更新角标
+    // Android: 通知渠道已启用 channelShowBadge，有通知时自动显示小圆点
+    final badgeCount = await _getBadgeCount();
+    if (badgeCount > 0) {
+      await _showBadgeUpdateNotification(badgeCount);
+    }
+  }
+
+  /// 显示角标更新通知（静默通知，仅用于更新角标）
+  Future<void> _showBadgeUpdateNotification(int count) async {
+    final iosDetails = DarwinNotificationDetails(
+      presentAlert: false,
+      presentBadge: true,
+      presentSound: false,
+      badgeNumber: count,
+    );
+
+    final details = NotificationDetails(iOS: iosDetails);
+
+    // 使用一个固定的 ID 来更新角标
+    await _notifications.show(
+      id: 999999,
+      title: '',
+      body: '',
+      notificationDetails: details,
+    );
+  }
+
+  /// 清除角标
+  Future<void> clearBadge() async {
+    final iosDetails = DarwinNotificationDetails(
+      presentBadge: true,
+      badgeNumber: 0,
+    );
+
+    final details = NotificationDetails(iOS: iosDetails);
+
+    await _notifications.show(
+      id: 999999,
+      title: '',
+      body: '',
+      notificationDetails: details,
+    );
   }
 }
 
