@@ -8,6 +8,7 @@ import '../models/webdav_config.dart';
 import '../models/ai_config.dart';
 import '../models/backup_history.dart';
 import '../models/product_image.dart';
+import '../models/ai_analysis_cache.dart';
 
 /// 数据库服务
 class DatabaseService {
@@ -24,7 +25,7 @@ class DatabaseService {
   static String get databaseName => _databaseName;
 
   /// 数据库版本
-  static const int _databaseVersion = 4;
+  static const int _databaseVersion = 5;
 
   /// 表名常量
   static const String tableItems = 'items';
@@ -36,6 +37,7 @@ class DatabaseService {
   static const String tableBackupHistory = 'backup_history';
   static const String tableCustomOptions = 'custom_options';
   static const String tableProductImages = 'product_images';
+  static const String tableAIAnalysisCache = 'ai_analysis_cache';
 
   /// 获取数据库实例
   Future<Database> get database async {
@@ -208,6 +210,19 @@ class DatabaseService {
     await db.execute('CREATE INDEX idx_reminder_logs_item_id ON $tableReminderLogs (item_id)');
     await db.execute('CREATE INDEX idx_ai_learning_item_name ON $tableAILearningRecords (item_name)');
     await db.execute('CREATE INDEX idx_product_images_name ON $tableProductImages (name)');
+
+    // AI分析缓存表
+    await db.execute('''
+      CREATE TABLE $tableAIAnalysisCache (
+        id TEXT PRIMARY KEY,
+        cache_key TEXT NOT NULL UNIQUE,
+        analysis_text TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      )
+    ''');
+
+    // 创建AI分析缓存索引
+    await db.execute('CREATE INDEX idx_ai_analysis_cache_key ON $tableAIAnalysisCache (cache_key)');
   }
 
   /// 数据库升级
@@ -252,6 +267,19 @@ class DatabaseService {
       await db.execute('ALTER TABLE $tableAIConfigs ADD COLUMN is_default INTEGER DEFAULT 0');
       // 将现有配置设为默认
       await db.execute('UPDATE $tableAIConfigs SET is_default = 1 WHERE enabled = 1');
+    }
+
+    // 版本4到版本5：添加AI分析缓存表
+    if (oldVersion < 5) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS $tableAIAnalysisCache (
+          id TEXT PRIMARY KEY,
+          cache_key TEXT NOT NULL UNIQUE,
+          analysis_text TEXT NOT NULL,
+          created_at TEXT NOT NULL
+        )
+      ''');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_ai_analysis_cache_key ON $tableAIAnalysisCache (cache_key)');
     }
   }
 
@@ -847,6 +875,42 @@ class DatabaseService {
       limit: 10,
     );
     return maps.map((map) => Item.fromJson(map)).toList();
+  }
+
+  // ==================== AI分析缓存操作 ====================
+
+  /// 获取AI分析缓存
+  Future<AIAnalysisCache?> getAIAnalysisCache(String cacheKey) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      tableAIAnalysisCache,
+      where: 'cache_key = ?',
+      whereArgs: [cacheKey],
+      limit: 1,
+    );
+    if (maps.isEmpty) return null;
+    return AIAnalysisCache.fromJson(maps.first);
+  }
+
+  /// 保存AI分析缓存
+  Future<void> saveAIAnalysisCache(AIAnalysisCache cache) async {
+    final db = await database;
+    await db.insert(
+      tableAIAnalysisCache,
+      cache.toJson(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  /// 清除过期的AI分析缓存（超过30天）
+  Future<void> clearExpiredAIAnalysisCache() async {
+    final db = await database;
+    final expiryDate = DateTime.now().subtract(const Duration(days: 30));
+    await db.delete(
+      tableAIAnalysisCache,
+      where: 'created_at < ?',
+      whereArgs: [expiryDate.toIso8601String()],
+    );
   }
 
   /// 关闭数据库
