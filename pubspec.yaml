@@ -57,6 +57,12 @@ dependencies:
   # 日期格式化
   intl: ^0.20.2
 
+  # 日期选择器（中文支持）
+  flutter_datetime_picker_plus: ^2.2.0
+
+  # 图片处理
+  image: ^4.0.0
+
   # 图标
   google_fonts: ^8.1.0
 
