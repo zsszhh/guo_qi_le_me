@@ -68,33 +68,37 @@ class LifecycleTimeline extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        return Stack(
-          children: [
-            // 背景轨道
-            Container(
-              height: 12,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: AppColors.surfaceVariant,
-                borderRadius: BorderRadius.circular(AppRadius.full),
-              ),
-            ),
-            // 进度填充
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              height: 12,
-              width: constraints.maxWidth * progress,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    AppColors.primary,
-                    progressColor,
-                  ],
+        final progressWidth = constraints.maxWidth * progress;
+        return SizedBox(
+          height: 12,
+          child: Stack(
+            children: [
+              // 背景轨道
+              Container(
+                height: 12,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceVariant,
+                  borderRadius: BorderRadius.circular(AppRadius.full),
                 ),
-                borderRadius: BorderRadius.circular(AppRadius.full),
               ),
-            ),
-          ],
+              // 进度填充
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                height: 12,
+                width: progressWidth,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.primary,
+                      progressColor,
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(AppRadius.full),
+                ),
+              ),
+            ],
+          ),
         );
       },
     );

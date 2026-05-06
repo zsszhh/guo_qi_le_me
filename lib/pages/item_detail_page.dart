@@ -86,9 +86,13 @@ class ItemDetailPage extends ConsumerWidget {
                   builder: (context, ref, _) {
                     final configAsync = ref.watch(defaultAIConfigProvider);
                     return configAsync.when(
-                      data: (config) => AIAnalysisCard(item: item, aiConfig: config),
-                      loading: () => AIAnalysisCard(item: item),
-                      error: (error, stackTrace) => AIAnalysisCard(item: item),
+                      data: (config) {
+                        // 没有配置AI时不显示
+                        if (config == null) return const SizedBox.shrink();
+                        return AIAnalysisCard(item: item, aiConfig: config);
+                      },
+                      loading: () => const SizedBox.shrink(),
+                      error: (error, stackTrace) => const SizedBox.shrink(),
                     );
                   },
                 ),
@@ -112,7 +116,11 @@ class ItemDetailPage extends ConsumerWidget {
   /// 构建标题区域
   Widget _buildTitleSection(Item item) {
     final statusText = item.openedDate != null ? '已开封' : '未开封';
-    final subtitle = '${item.category}${item.specification != null ? ' · ${item.specification}' : ''} · $statusText';
+    final parts = <String>[
+      item.category,
+      if (item.specification != null && item.specification!.isNotEmpty) item.specification!,
+      statusText,
+    ];
 
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.containerMargin),
@@ -126,11 +134,45 @@ class ItemDetailPage extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.xs),
+          // 副标题：分类 · 规格 · 状态
           Text(
-            subtitle,
+            parts.join(' · '),
             style: AppTypography.bodyBase.copyWith(
               color: AppColors.onSurfaceVariant,
             ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          // 位置和数量信息
+          Row(
+            children: [
+              if (item.location != null && item.location!.isNotEmpty) ...[
+                Icon(
+                  Icons.place_outlined,
+                  size: 16,
+                  color: AppColors.primary,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  item.location!,
+                  style: AppTypography.bodySm.copyWith(
+                    color: AppColors.primary,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+              ],
+              Icon(
+                Icons.inventory_2_outlined,
+                size: 16,
+                color: AppColors.onSurfaceVariant,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                '${item.quantity}${item.unit}',
+                style: AppTypography.bodySm.copyWith(
+                  color: AppColors.onSurfaceVariant,
+                ),
+              ),
+            ],
           ),
         ],
       ),

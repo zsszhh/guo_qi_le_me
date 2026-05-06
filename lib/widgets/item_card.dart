@@ -164,16 +164,15 @@ class ItemCard extends StatelessWidget {
         ),
       ));
     }
-    if (quantity > 1) {
-      if (parts.isNotEmpty) parts.add(_buildDot());
-      parts.add(Text(
-        '$quantity个',
-        style: AppTypography.bodySm.copyWith(
-          color: AppColors.onSurface,
-          fontSize: 12,
-        ),
-      ));
-    }
+    // 始终显示数量（只有1个也显示）
+    if (parts.isNotEmpty) parts.add(_buildDot());
+    parts.add(Text(
+      '$quantity$unit',
+      style: AppTypography.bodySm.copyWith(
+        color: AppColors.onSurface,
+        fontSize: 12,
+      ),
+    ));
     if (parts.isNotEmpty) parts.add(_buildDot());
     parts.add(Text(
       timeText,
