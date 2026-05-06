@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import '../models/item.dart';
 import '../services/database_service.dart';
+import '../services/notification_service.dart';
 import '../utils/status_utils.dart';
 import '../utils/constants.dart';
 
@@ -180,6 +181,9 @@ class ItemsNotifier extends StateNotifier<ItemsState> {
       // 更新状态（可能需要根据过期日期更新，但跳过 consumed 状态）
       final updatedItems = await _updateItemStatuses(items);
       state = state.copyWith(items: updatedItems, isLoading: false);
+
+      // 更新应用角标
+      NotificationService().updateBadge();
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
@@ -406,4 +410,10 @@ final itemByIdProvider = Provider.family<Item?, String>((ref, id) {
 final itemStatsProvider = Provider<ItemStats>((ref) {
   final state = ref.watch(itemsProvider);
   return state.stats;
+});
+
+/// 最近添加的物品Provider
+final recentItemsProvider = FutureProvider<List<Item>>((ref) async {
+  final dbService = DatabaseService();
+  return await dbService.getRecentItems(limit: 5);
 });
