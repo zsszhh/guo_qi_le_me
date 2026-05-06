@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
+import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
 import '../theme/colors.dart';
 import '../theme/typography.dart';
 import '../theme/spacing.dart';
@@ -586,34 +587,49 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
     bool isOpenedDate = false,
   }) async {
     DateTime initialDate;
+    String title;
+    DateTime minDate;
+    DateTime maxDate;
+
     if (isPurchaseDate) {
       initialDate = _purchaseDate;
+      title = '选择购买日期';
+      minDate = DateTime(2020);
+      maxDate = DateTime.now().add(const Duration(days: 365));
     } else if (isExpiryDate) {
       initialDate = _expiryDate;
+      title = '选择过期日期';
+      minDate = DateTime.now().subtract(const Duration(days: 365));
+      maxDate = DateTime(2030);
     } else if (isOpenedDate) {
       initialDate = _openedDate ?? DateTime.now();
+      title = '选择开封日期';
+      minDate = DateTime(2020);
+      maxDate = DateTime.now().add(const Duration(days: 365));
     } else {
       return;
     }
 
-    final picked = await showDatePicker(
-      context: context,
+    await DatePicker.showDatePicker(
+      context,
+      showTitleActions: true,
+      minTime: minDate,
+      maxTime: maxDate,
       initialDate: initialDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
+      locale: LocaleType.zh,
+      onConfirm: (date) {
+        setState(() {
+          if (isPurchaseDate) {
+            _purchaseDate = date;
+          } else if (isExpiryDate) {
+            _expiryDate = date;
+          } else if (isOpenedDate) {
+            _openedDate = date;
+          }
+        });
+      },
+      currentTime: initialDate,
     );
-
-    if (picked != null) {
-      setState(() {
-        if (isPurchaseDate) {
-          _purchaseDate = picked;
-        } else if (isExpiryDate) {
-          _expiryDate = picked;
-        } else if (isOpenedDate) {
-          _openedDate = picked;
-        }
-      });
-    }
   }
 
   void _pickImage() async {
