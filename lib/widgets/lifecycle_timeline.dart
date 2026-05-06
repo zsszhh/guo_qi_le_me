@@ -80,99 +80,60 @@ class LifecycleTimeline extends StatelessWidget {
         return Stack(
           clipBehavior: Clip.none,
           children: [
-            // 进度条区域
-            Column(
-              children: [
-                // 进度条
-                SizedBox(
-                  height: 12,
-                  child: Stack(
-                    children: [
-                      // 背景轨道
-                      Container(
-                        height: 12,
-                        width: totalWidth,
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceVariant,
-                          borderRadius: BorderRadius.circular(AppRadius.full),
-                        ),
-                      ),
-                      // 进度填充
-                      Container(
-                        height: 12,
-                        width: totalWidth * animatedProgress,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              AppColors.primary,
-                              progressColor,
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(AppRadius.full),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                // 底部日期标记
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 购买日期
-                    _buildDateMarker(
-                      '购买',
-                      _formatDate(purchaseDate),
-                      AppColors.outlineVariant,
-                    ),
-                    // 过期日期
-                    _buildDateMarker(
-                      '过期',
-                      _formatDate(expiryDate),
-                      AppColors.outlineVariant,
-                    ),
+            // 进度条（背景）
+            Container(
+              height: 12,
+              width: totalWidth,
+              decoration: BoxDecoration(
+                color: AppColors.surfaceVariant,
+                borderRadius: BorderRadius.circular(AppRadius.full),
+              ),
+            ),
+            // 进度条（填充）
+            Container(
+              height: 12,
+              width: totalWidth * animatedProgress,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.primary,
+                    progressColor,
                   ],
                 ),
-              ],
+                borderRadius: BorderRadius.circular(AppRadius.full),
+              ),
             ),
-            // 今天标记点 + 文字（根据动画进度定位）
+            // 购买日标记点（左端）
             Positioned(
-              left: totalWidth * animatedProgress - 8, // 减去圆点半径使其居中
+              left: 0,
               top: -2,
-              child: Column(
-                children: [
-                  // 圆点
-                  Container(
-                    width: 16,
-                    height: 16,
-                    decoration: BoxDecoration(
-                      color: todayColor,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: AppColors.surface,
-                        width: 2,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: todayColor.withValues(alpha: 0.3),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  // 今天文字
-                  Text(
-                    '今天',
-                    style: AppTypography.labelCaps.copyWith(
-                      color: todayColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 10,
-                    ),
-                  ),
-                ],
+              child: _buildMarker(
+                '购买',
+                _formatDate(purchaseDate),
+                AppColors.outlineVariant,
+                isToday: false,
+              ),
+            ),
+            // 今天标记点（根据进度定位）
+            Positioned(
+              left: totalWidth * animatedProgress - 8,
+              top: -2,
+              child: _buildMarker(
+                '今天',
+                '',
+                todayColor,
+                isToday: true,
+              ),
+            ),
+            // 过期日标记点（右端）
+            Positioned(
+              right: 0,
+              top: -2,
+              child: _buildMarker(
+                '过期',
+                _formatDate(expiryDate),
+                AppColors.outlineVariant,
+                isToday: false,
               ),
             ),
           ],
@@ -181,31 +142,52 @@ class LifecycleTimeline extends StatelessWidget {
     );
   }
 
-  Widget _buildDateMarker(String label, String date, Color color) {
+  Widget _buildMarker(String label, String date, Color color, {required bool isToday}) {
     return Column(
       children: [
+        // 圆点
         Container(
-          width: 8,
-          height: 8,
+          width: isToday ? 16 : 8,
+          height: isToday ? 16 : 8,
           decoration: BoxDecoration(
             color: color,
             shape: BoxShape.circle,
+            border: isToday
+                ? Border.all(
+                    color: AppColors.surface,
+                    width: 2,
+                  )
+                : null,
+            boxShadow: isToday
+                ? [
+                    BoxShadow(
+                      color: color.withValues(alpha: 0.3),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
           ),
         ),
         const SizedBox(height: 4),
+        // 标签
         Text(
           label,
           style: AppTypography.labelCaps.copyWith(
-            color: AppColors.onSurfaceVariant,
+            color: isToday ? color : AppColors.onSurfaceVariant,
+            fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
             fontSize: 10,
           ),
         ),
-        Text(
-          date,
-          style: AppTypography.labelCaps.copyWith(
-            color: AppColors.onSurfaceVariant,
+        // 日期（今天不显示日期）
+        if (!isToday && date.isNotEmpty)
+          Text(
+            date,
+            style: AppTypography.labelCaps.copyWith(
+              color: AppColors.onSurfaceVariant,
+              fontSize: 10,
+            ),
           ),
-        ),
       ],
     );
   }
