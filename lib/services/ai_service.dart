@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../models/ai_config.dart';
 import '../utils/constants.dart';
 import 'secure_storage_service.dart';
+import 'image_preprocessing_service.dart';
 
 /// AI识别结果
 class AIRecognitionResult {
@@ -45,6 +46,68 @@ class AIRecognitionResult {
   });
 }
 
+/// 物品识别结果（Step 1）
+class ItemIdentification {
+  final String name;
+  final String category;
+  final String? brand;
+  final String? specification;
+
+  const ItemIdentification({
+    required this.name,
+    required this.category,
+    this.brand,
+    this.specification,
+  });
+}
+
+/// 日期解析结果（Step 2）
+class DateParsingResult {
+  final List<RecognizedDate> datesFound;
+  final String? shelfLifeText;
+  final int? shelfLifeMonths;
+
+  const DateParsingResult({
+    required this.datesFound,
+    this.shelfLifeText,
+    this.shelfLifeMonths,
+  });
+}
+
+/// 识别到的日期
+class RecognizedDate {
+  final String rawText;
+  final DateTime? parsedDate;
+  final String formatType;
+  final String likelyType;
+  final String? location;
+
+  const RecognizedDate({
+    required this.rawText,
+    this.parsedDate,
+    required this.formatType,
+    required this.likelyType,
+    this.location,
+  });
+}
+
+/// 日期验证结果（Step 3）
+class DateValidationResult {
+  final DateTime? productionDate;
+  final DateTime? expiryDate;
+  final bool validationPassed;
+  final double confidence;
+  final String? notes;
+
+  const DateValidationResult({
+    this.productionDate,
+    this.expiryDate,
+    required this.validationPassed,
+    required this.confidence,
+    this.notes,
+  });
+}
+
 /// 连接测试结果
 class ConnectionTestResult {
   final bool success;
@@ -75,6 +138,7 @@ class AIService {
 
   final Dio _dio = Dio();
   final SecureStorageService _secureStorage = SecureStorageService();
+  final ImagePreprocessingService _preprocessingService = ImagePreprocessingService();
 
   /// 豆包API基础URL
   static const String _doubaoBaseUrl = 'https://ark.cn-beijing.volces.com/api/v3';
@@ -659,5 +723,335 @@ class AIService {
       return '请求失败: ${error.message}';
     }
     return '发生错误: $error';
+  }
+
+  // ============================================================
+  // Agent 工作流方法
+  // ============================================================
+
+  /// 使用 Agent 工作流识别图片（增强版）
+  Future<AIRecognitionResult> recognizeImageWithAgent({
+    required AIConfig config,
+    required String originalImageBase64,
+    String? enhancedImageBase64,
+  }) async {
+    final today = DateTime.now().toString().split(' ')[0];
+
+    // Step 1: 物品识别
+    final itemInfo = await _step1_IdentifyItem(config, originalImageBase64, enhancedImageBase64);
+
+    // Step 2: 日期解析
+    final dateInfo = await _step2_ParseDates(config, originalImageBase64, enhancedImageBase64, today);
+
+    // Step 3: 逻辑验证
+    final validatedInfo = await _step3_ValidateDates(config, dateInfo, today);
+
+    // Step 4: 智能推算
+    final finalResult = _step4_CalculateExpiry(validatedInfo, itemInfo, today);
+
+    return finalResult;
+  }
+
+  /// Step 1: 物品识别
+  Future<ItemIdentification> _step1_IdentifyItem(
+    AIConfig config,
+    String originalImageBase64,
+    String? enhancedImageBase64,
+  ) async {
+    final prompt = '''
+你是物品识别助手。请识别图片中的物品基本信息。
+
+【识别目标】
+- 名称（必填）
+- 分类：食品/药品/化妆品/日用品/其他
+- 品牌（如有）
+- 规格（如有）
+
+【返回格式】严格返回JSON，不要添加其他文字：
+{
+  "name": "物品名称",
+  "category": "分类",
+  "brand": "品牌",
+  "specification": "规格"
+}
+''';
+
+    final response = await _callVisionAPIWithDualImages(
+      config: config,
+      originalImageBase64: originalImageBase64,
+      enhancedImageBase64: enhancedImageBase64,
+      prompt: prompt,
+    );
+
+    final content = _extractContent(response);
+    final json = _parseJsonFromContent(content);
+
+    return ItemIdentification(
+      name: json['name'] as String? ?? '未知物品',
+      category: json['category'] as String? ?? PresetCategories.food,
+      brand: json['brand'] as String?,
+      specification: json['specification'] as String?,
+    );
+  }
+
+  /// Step 2: 日期解析
+  Future<DateParsingResult> _step2_ParseDates(
+    AIConfig config,
+    String originalImageBase64,
+    String? enhancedImageBase64,
+    String today,
+  ) async {
+    final prompt = '''
+你是日期解析专家。请仔细扫描图片中的所有日期相关信息。
+
+【当前日期】$today
+
+【日期格式说明】
+1. 标准格式：2024-01-01、2024/01/01
+2. 中文格式：2024年1月1日
+3. 纯数字格式：20260325（YYYYMMDD，常见于喷码）
+4. 其他格式：20240101、2024.01.01
+
+【特别注意】
+- 喷码通常在包装底部、封口处、瓶盖边缘
+- 喷码颜色可能较淡，请仔细查看
+- 单独的数字通常是生产日期
+- 如果有两个日期，较早的是生产日期，较晚的是过期日期
+
+【保质期文字】
+常见的保质期表述：保质期9个月、保质期12个月、保质期180天等
+
+【返回格式】严格返回JSON，不要添加其他文字：
+{
+  "dates_found": [
+    {
+      "raw_text": "20260325",
+      "parsed_date": "2026-03-25",
+      "format_type": "纯数字喷码",
+      "likely_type": "生产日期",
+      "location": "包装底部"
+    }
+  ],
+  "shelf_life_text": "保质期9个月",
+  "shelf_life_months": 9
+}
+
+如果找不到日期，返回空数组：
+{
+  "dates_found": [],
+  "shelf_life_text": null,
+  "shelf_life_months": null
+}
+''';
+
+    final response = await _callVisionAPIWithDualImages(
+      config: config,
+      originalImageBase64: originalImageBase64,
+      enhancedImageBase64: enhancedImageBase64,
+      prompt: prompt,
+    );
+
+    final content = _extractContent(response);
+    final json = _parseJsonFromContent(content);
+
+    final datesFound = (json['dates_found'] as List<dynamic>?)
+        ?.map((d) => RecognizedDate(
+              rawText: d['raw_text'] as String? ?? '',
+              parsedDate: d['parsed_date'] != null
+                  ? DateTime.tryParse(d['parsed_date'] as String)
+                  : null,
+              formatType: d['format_type'] as String? ?? '未知格式',
+              likelyType: d['likely_type'] as String? ?? '未知',
+              location: d['location'] as String?,
+            ))
+        .toList() ?? [];
+
+    return DateParsingResult(
+      datesFound: datesFound,
+      shelfLifeText: json['shelf_life_text'] as String?,
+      shelfLifeMonths: json['shelf_life_months'] as int?,
+    );
+  }
+
+  /// Step 3: 逻辑验证
+  Future<DateValidationResult> _step3_ValidateDates(
+    AIConfig config,
+    DateParsingResult dateInfo,
+    String today,
+  ) async {
+    final datesJson = dateInfo.datesFound
+        .map((d) => {
+              'raw': d.rawText,
+              'parsed': d.parsedDate?.toString().split(' ')[0],
+              'type': d.likelyType,
+            })
+        .toList();
+
+    final prompt = '''
+你是日期逻辑验证专家。请验证以下日期信息的合理性。
+
+【当前日期】$today
+
+【识别到的日期】
+${jsonEncode(datesJson)}
+
+【保质期信息】
+文本: ${dateInfo.shelfLifeText ?? '未识别'}
+月数: ${dateInfo.shelfLifeMonths ?? '未识别'}
+
+【验证规则】
+1. 生产日期应早于当前日期（除非是未来生产的商品）
+2. 过期日期应晚于当前日期（除非已经过期）
+3. 如有"保质期X个月"文字，结合生产日期推算过期日期
+4. 纯数字喷码通常是生产日期，需要结合保质期推算过期日期
+
+【推算示例】
+生产日期: 2026-03-25，保质期: 9个月
+→ 过期日期: 2026-12-25
+
+【返回格式】严格返回JSON：
+{
+  "production_date": "YYYY-MM-DD 或 null",
+  "expiry_date": "YYYY-MM-DD",
+  "validation_passed": true,
+  "confidence": 0.95,
+  "notes": "验证说明"
+}
+''';
+
+    final response = await _callTextAPI(config: config, prompt: prompt);
+    final content = _extractContent(response);
+    final json = _parseJsonFromContent(content);
+
+    return DateValidationResult(
+      productionDate: json['production_date'] != null
+          ? DateTime.tryParse(json['production_date'] as String)
+          : null,
+      expiryDate: json['expiry_date'] != null
+          ? DateTime.tryParse(json['expiry_date'] as String)
+          : null,
+      validationPassed: json['validation_passed'] as bool? ?? false,
+      confidence: (json['confidence'] as num?)?.toDouble() ?? 0.5,
+      notes: json['notes'] as String?,
+    );
+  }
+
+  /// Step 4: 智能推算并生成最终结果
+  AIRecognitionResult _step4_CalculateExpiry(
+    DateValidationResult validatedInfo,
+    ItemIdentification itemInfo,
+    String today,
+  ) {
+    DateTime expiryDate;
+    String expiryInfoSource;
+    bool dateVisible = true;
+    String? dateLocationHint;
+
+    if (validatedInfo.expiryDate != null) {
+      // 有明确的过期日期
+      expiryDate = validatedInfo.expiryDate!;
+      expiryInfoSource = '标签显示';
+    } else if (validatedInfo.productionDate != null) {
+      // 只有生产日期，使用默认保质期
+      final defaultDays = _getDefaultShelfLifeDays(itemInfo.category);
+      expiryDate = validatedInfo.productionDate!.add(Duration(days: defaultDays));
+      expiryInfoSource = '推算';
+    } else {
+      // 没有任何日期，使用默认值
+      final defaultDays = _getDefaultShelfLifeDays(itemInfo.category);
+      expiryDate = DateTime.parse(today).add(Duration(days: defaultDays));
+      expiryInfoSource = '默认估算';
+      dateVisible = false;
+      dateLocationHint = '未识别到日期，请手动确认';
+    }
+
+    return AIRecognitionResult(
+      name: itemInfo.name,
+      category: itemInfo.category,
+      brand: itemInfo.brand,
+      specification: itemInfo.specification,
+      expiryDate: expiryDate,
+      confidence: validatedInfo.confidence,
+      dateVisible: dateVisible,
+      dateLocationHint: dateLocationHint,
+      expiryInfoSource: expiryInfoSource,
+      productionDate: validatedInfo.productionDate,
+    );
+  }
+
+  /// 调用视觉 API（支持双图片）
+  Future<Map<String, dynamic>> _callVisionAPIWithDualImages({
+    required AIConfig config,
+    required String originalImageBase64,
+    String? enhancedImageBase64,
+    required String prompt,
+  }) async {
+    final baseUrl = _getBaseUrl(config);
+    final apiKey = await _getSecureApiKey(config);
+
+    // 构建图片内容
+    final List<Map<String, dynamic>> imageContents = [
+      {
+        'type': 'image_url',
+        'image_url': {'url': 'data:image/jpeg;base64,$originalImageBase64'},
+      },
+    ];
+
+    // 如果有增强版本，添加第二个图片
+    if (enhancedImageBase64 != null) {
+      imageContents.add({
+        'type': 'image_url',
+        'image_url': {'url': 'data:image/jpeg;base64,$enhancedImageBase64'},
+      });
+    }
+
+    final response = await _dio.post(
+      '$baseUrl/chat/completions',
+      options: Options(
+        headers: {
+          'Authorization': 'Bearer $apiKey',
+          'Content-Type': 'application/json',
+        },
+        sendTimeout: Duration(seconds: config.timeoutSeconds),
+        receiveTimeout: Duration(seconds: config.timeoutSeconds),
+      ),
+      data: {
+        'model': config.defaultModel,
+        'messages': [
+          {
+            'role': 'user',
+            'content': [
+              {'type': 'text', 'text': prompt},
+              ...imageContents,
+            ],
+          },
+        ],
+        'max_tokens': 1500,
+      },
+    );
+
+    return response.data;
+  }
+
+  /// 从响应中提取内容
+  String? _extractContent(Map<String, dynamic> response) {
+    if (response['choices'] != null) {
+      return response['choices'][0]['message']['content'] as String?;
+    }
+    return null;
+  }
+
+  /// 从内容中解析 JSON
+  Map<String, dynamic> _parseJsonFromContent(String? content) {
+    if (content == null) return {};
+
+    try {
+      final jsonMatch = RegExp(r'\{[\s\S]*\}').firstMatch(content);
+      if (jsonMatch != null) {
+        return jsonDecode(jsonMatch.group(0)!) as Map<String, dynamic>;
+      }
+    } catch (_) {}
+
+    return {};
   }
 }
