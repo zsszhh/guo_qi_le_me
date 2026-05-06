@@ -14,6 +14,7 @@ import '../models/item.dart';
 import '../models/ai_config.dart';
 import '../services/ai_service.dart';
 import '../services/database_service.dart';
+import '../models/prefilled_data.dart';
 import 'item_edit_page.dart';
 
 /// AI智能录入页面
@@ -318,10 +319,13 @@ class _AIInputPageState extends ConsumerState<AIInputPage> {
         return;
       }
 
+      // 保存图片路径用于后续传递
+      final selectedImagePath = image.path;
+
       setState(() => _loadingText = 'AI 正在识别...');
 
       // 读取图片并转Base64
-      final bytes = await File(image.path).readAsBytes();
+      final bytes = await File(selectedImagePath).readAsBytes();
       final base64Image = base64Encode(bytes);
 
       // 调用AI识别
@@ -348,6 +352,7 @@ class _AIInputPageState extends ConsumerState<AIInputPage> {
                 dateVisible: result.dateVisible,
                 dateLocationHint: result.dateLocationHint,
                 expiryInfoSource: result.expiryInfoSource,
+                imageUrl: selectedImagePath,
               ),
             ),
           ),
