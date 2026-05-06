@@ -103,40 +103,43 @@ class LifecycleTimeline extends StatelessWidget {
   }
 
   Widget _buildMarkers() {
-    return Stack(
-      children: [
-        // 购买日期
-        Positioned(
-          left: 0,
-          child: _buildMarker(
-            _formatDate(purchaseDate),
-            '购买',
-            AppColors.outlineVariant,
-          ),
-        ),
-        // 今天
-        Positioned(
-          left: 0,
-          right: 0,
-          child: Center(
+    return SizedBox(
+      height: 50,
+      child: Stack(
+        children: [
+          // 购买日期
+          Positioned(
+            left: 0,
             child: _buildMarker(
-              '今天',
-              '',
-              daysRemaining < 0 ? AppColors.error : AppColors.primary,
-              isToday: true,
+              _formatDate(purchaseDate),
+              '购买',
+              AppColors.outlineVariant,
             ),
           ),
-        ),
-        // 过期日期
-        Positioned(
-          right: 0,
-          child: _buildMarker(
-            _formatDate(expiryDate),
-            '过期',
-            AppColors.outlineVariant,
+          // 今天
+          Positioned(
+            left: 0,
+            right: 0,
+            child: Center(
+              child: _buildMarker(
+                '今天',
+                '',
+                daysRemaining < 0 ? AppColors.error : AppColors.primary,
+                isToday: true,
+              ),
+            ),
           ),
-        ),
-      ],
+          // 过期日期
+          Positioned(
+            right: 0,
+            child: _buildMarker(
+              _formatDate(expiryDate),
+              '过期',
+              AppColors.outlineVariant,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

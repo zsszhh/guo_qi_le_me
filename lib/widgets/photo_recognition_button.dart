@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../theme/colors.dart';
 import '../theme/typography.dart';
@@ -47,19 +46,6 @@ class PhotoRecognitionButton extends StatelessWidget {
         child: Stack(
           alignment: Alignment.center,
           children: [
-            // 光晕叠加层
-            Container(
-              width: 224,
-              height: 224,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.2),
-              ),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                child: Container(),
-              ),
-            ),
             // 内容
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
