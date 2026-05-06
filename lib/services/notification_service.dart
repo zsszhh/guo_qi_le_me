@@ -4,6 +4,7 @@ import '../models/item.dart';
 import '../models/reminder_config.dart';
 import '../models/reminder_log.dart';
 import '../services/database_service.dart';
+import '../utils/constants.dart';
 
 /// 通知导航回调类型
 typedef NotificationNavigationCallback = void Function(String itemId);
@@ -164,7 +165,7 @@ class NotificationService {
         item.expiryDate.day,
       );
       final daysRemaining = expiryDate.difference(today).inDays;
-      return daysRemaining <= 3;
+      return daysRemaining <= AppConstants.badgeDaysThreshold;
     }).length;
   }
 

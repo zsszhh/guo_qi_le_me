@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/colors.dart';
 import '../theme/typography.dart';
 import '../theme/spacing.dart';
+import '../utils/constants.dart';
 
 /// 生命周期时间轴
 class LifecycleTimeline extends StatelessWidget {
@@ -72,7 +73,7 @@ class LifecycleTimeline extends StatelessWidget {
   Widget _buildTimelineSection(double progress) {
     final progressColor = daysRemaining < 0
         ? AppColors.error
-        : (daysRemaining <= 3 ? AppColors.error : AppColors.primary);
+        : (daysRemaining <= AppConstants.urgentDaysThreshold ? AppColors.error : AppColors.primary);
     final todayColor = AppColors.error;
 
     return LayoutBuilder(

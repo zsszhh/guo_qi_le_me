@@ -1,4 +1,5 @@
 import 'package:workmanager/workmanager.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'notification_service.dart';
 
@@ -78,17 +79,25 @@ class BackgroundService {
 @pragma('vm:entry-point')
 void _callbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
-    // 初始化通知服务
-    final notificationService = NotificationService();
-    await notificationService.initialize();
+    try {
+      // 初始化通知服务
+      final notificationService = NotificationService();
+      await notificationService.initialize();
 
-    // 检查并发送提醒
-    await notificationService.checkAndSendReminders();
+      // 检查并发送提醒
+      await notificationService.checkAndSendReminders();
 
-    // 更新角标
-    await notificationService.updateBadge();
+      // 更新角标
+      await notificationService.updateBadge();
 
-    return Future.value(true);
+      return Future.value(true);
+    } catch (e, stackTrace) {
+      // 记录错误日志
+      debugPrint('后台任务执行失败: $e');
+      debugPrint('堆栈跟踪: $stackTrace');
+      // 返回 false 允许系统重试
+      return Future.value(false);
+    }
   });
 }
 

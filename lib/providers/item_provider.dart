@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 import '../models/ai_config.dart';
 import '../models/item.dart';
 import '../services/database_service.dart';
@@ -341,8 +340,10 @@ class ItemsNotifier extends StateNotifier<ItemsState> {
     );
   }
 
-  /// 更新物品状态（跳过 consumed 状态的物品）
+  /// 更新物品状态（跳过 consumed 状态的物品，使用批量更新优化）
   Future<List<Item>> _updateItemStatuses(List<Item> items) async {
+    // 按新状态分组
+    final statusGroups = <String, List<String>>{}; // status -> list of ids
     final needsUpdate = <Item>[];
 
     for (final item in items) {
@@ -353,19 +354,20 @@ class ItemsNotifier extends StateNotifier<ItemsState> {
 
       final correctStatus = StatusUtils.calculateStatus(item.expiryDate);
       if (item.status != correctStatus) {
-        needsUpdate.add(item.copyWith(status: correctStatus));
+        final statusName = correctStatus.name;
+        statusGroups.putIfAbsent(statusName, () => []).add(item.id);
+        needsUpdate.add(item);
       }
     }
 
-    // 批量更新状态
-    for (final item in needsUpdate) {
-      await _dbService.updateItem(item);
+    // 批量更新状态（按状态分组更新）
+    for (final entry in statusGroups.entries) {
+      await _dbService.updateItemsStatus(entry.value, entry.key);
     }
 
     // 如果有更新，返回新列表
     if (needsUpdate.isNotEmpty) {
       return items.map((item) {
-        // 跳过已使用的物品
         if (item.status == ItemStatus.consumed) {
           return item;
         }

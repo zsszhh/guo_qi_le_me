@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/legacy.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/ai_config.dart';
 import '../services/database_service.dart';
 import '../services/ai_service.dart';

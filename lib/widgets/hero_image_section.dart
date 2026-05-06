@@ -90,12 +90,12 @@ class HeroImageSection extends StatelessWidget {
       bgColor = AppColors.errorContainer;
       textColor = AppColors.onErrorContainer;
       icon = Icons.warning;
-    } else if (daysRemaining <= 3) {
+    } else if (daysRemaining <= AppConstants.urgentDaysThreshold) {
       text = '还有 $daysRemaining 天过期';
       bgColor = AppColors.errorContainer;
       textColor = AppColors.onErrorContainer;
       icon = Icons.warning;
-    } else if (daysRemaining <= 7) {
+    } else if (daysRemaining <= AppConstants.warningDaysThreshold) {
       text = '还有 $daysRemaining 天过期';
       bgColor = AppColors.secondaryContainer;
       textColor = AppColors.onSecondaryContainer;

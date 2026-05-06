@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import '../utils/constants.dart';
 
 /// 物品实体
@@ -52,12 +53,13 @@ class Item {
       throw const FormatException('Item JSON 缺少必需字段: name');
     }
 
-    // 安全解析日期
+    // 安全解析日期（带日志记录）
     DateTime parseDate(String? value, DateTime defaultValue, String fieldName) {
       if (value == null || value.isEmpty) return defaultValue;
       try {
         return DateTime.parse(value);
       } catch (e) {
+        debugPrint('警告: 解析日期字段 "$fieldName" 失败，值: "$value"，使用默认值');
         return defaultValue;
       }
     }

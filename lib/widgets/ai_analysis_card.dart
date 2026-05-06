@@ -8,6 +8,7 @@ import '../services/database_service.dart';
 import '../theme/colors.dart';
 import '../theme/typography.dart';
 import '../theme/spacing.dart';
+import '../utils/constants.dart';
 
 /// AI保质期分析卡片
 class AIAnalysisCard extends StatefulWidget {
@@ -120,7 +121,7 @@ class _AIAnalysisCardState extends State<AIAnalysisCard> {
       tip = '请按照产品说明妥善保存。';
     }
 
-    if (daysRemaining <= 3) {
+    if (daysRemaining <= AppConstants.urgentDaysThreshold) {
       tip += ' 剩余天数较少，建议优先使用。';
     }
 

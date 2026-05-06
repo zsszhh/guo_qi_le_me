@@ -121,7 +121,7 @@ class _RecentItemCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: daysRemaining < 0
                     ? AppColors.errorContainer
-                    : daysRemaining <= 7
+                    : daysRemaining <= AppConstants.warningDaysThreshold
                         ? AppColors.secondaryContainer
                         : AppColors.surfaceContainer,
                 borderRadius: BorderRadius.circular(AppRadius.full),
@@ -132,7 +132,7 @@ class _RecentItemCard extends StatelessWidget {
                   fontSize: 10,
                   color: daysRemaining < 0
                       ? AppColors.onErrorContainer
-                      : daysRemaining <= 7
+                      : daysRemaining <= AppConstants.warningDaysThreshold
                           ? AppColors.onSecondaryContainer
                           : AppColors.primary,
                 ),

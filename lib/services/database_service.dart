@@ -9,6 +9,7 @@ import '../models/ai_config.dart';
 import '../models/backup_history.dart';
 import '../models/product_image.dart';
 import '../models/ai_analysis_cache.dart';
+import 'secure_storage_service.dart';
 
 /// 数据库服务
 class DatabaseService {
@@ -17,6 +18,7 @@ class DatabaseService {
   DatabaseService._internal();
 
   static Database? _database;
+  final SecureStorageService _secureStorage = SecureStorageService();
 
   /// 数据库名称
   static const String _databaseName = 'guo_qi_le_me.db';
@@ -355,13 +357,14 @@ class DatabaseService {
     return maps.map((map) => Item.fromJson(map)).toList();
   }
 
-  /// 搜索物品
+  /// 搜索物品（转义特殊字符防止意外匹配）
   Future<List<Item>> searchItems(String keyword) async {
     final db = await database;
+    final escapedKeyword = _escapeLikePattern(keyword);
     final List<Map<String, dynamic>> maps = await db.query(
       tableItems,
-      where: 'name LIKE ? OR brand LIKE ? OR location LIKE ?',
-      whereArgs: ['%$keyword%', '%$keyword%', '%$keyword%'],
+      where: 'name LIKE ? ESCAPE "\\" OR brand LIKE ? ESCAPE "\\" OR location LIKE ? ESCAPE "\\"',
+      whereArgs: ['%$escapedKeyword%', '%$escapedKeyword%', '%$escapedKeyword%'],
       orderBy: 'expiry_date ASC',
     );
     return maps.map((map) => Item.fromJson(map)).toList();
@@ -600,12 +603,20 @@ class DatabaseService {
     return WebDAVConfig.fromJson(maps.first);
   }
 
-  /// 保存WebDAV配置
+  /// 保存WebDAV配置（密码存入安全存储，数据库不保留明文）
   Future<void> saveWebDAVConfig(WebDAVConfig config) async {
     final db = await database;
+
+    // 将密码存入安全存储
+    if (config.password.isNotEmpty) {
+      await _secureStorage.saveWebDAVPassword(config.password);
+    }
+
+    // 数据库中不存储密码，使用空字符串占位
+    final secureConfig = config.copyWith(password: '');
     await db.insert(
       tableWebDAVConfigs,
-      config.toJson(),
+      secureConfig.toJson(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
@@ -657,12 +668,20 @@ class DatabaseService {
     return AIConfig.fromJson(maps.first);
   }
 
-  /// 保存AI配置（新增或更新）
+  /// 保存AI配置（API Key存入安全存储，数据库不保留明文）
   Future<void> saveAIConfig(AIConfig config) async {
     final db = await database;
+
+    // 将API Key存入安全存储
+    if (config.apiKey.isNotEmpty) {
+      await _secureStorage.saveApiKey(config.id, config.apiKey);
+    }
+
+    // 数据库中不存储API Key，使用空字符串占位
+    final secureConfig = config.copyWith(apiKey: '');
     await db.insert(
       tableAIConfigs,
-      config.toJson(),
+      secureConfig.toJson(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
@@ -686,7 +705,7 @@ class DatabaseService {
     });
   }
 
-  /// 删除AI配置（处理默认配置切换逻辑）
+  /// 删除AI配置（处理默认配置切换逻辑，清理安全存储）
   Future<void> deleteAIConfig(String id) async {
     final db = await database;
 
@@ -695,6 +714,9 @@ class DatabaseService {
     if (config == null) return;
 
     final isDefault = config.isDefault;
+
+    // 清理安全存储中的API Key
+    await _secureStorage.deleteApiKey(id);
 
     await db.transaction((txn) async {
       // 删除配置
@@ -723,7 +745,7 @@ class DatabaseService {
     });
   }
 
-  /// 复制AI配置
+  /// 复制AI配置（同时复制API Key到安全存储）
   Future<AIConfig> duplicateAIConfig(String id) async {
     final db = await database;
     final original = await getAIConfigById(id);
@@ -737,12 +759,19 @@ class DatabaseService {
         ? '${original.displayName} (副本)'
         : null;
 
+    // 从安全存储获取原始API Key并复制到新ID
+    final originalApiKey = await _secureStorage.getApiKey(id);
+    if (originalApiKey != null && originalApiKey.isNotEmpty) {
+      await _secureStorage.saveApiKey(newId, originalApiKey);
+    }
+
     final duplicated = original.copyWith(
       id: newId,
       displayName: displayName,
       isDefault: false,
       createdAt: now,
       updatedAt: now,
+      apiKey: '', // 数据库不存储API Key
     );
 
     await db.insert(
@@ -817,13 +846,14 @@ class DatabaseService {
     );
   }
 
-  /// 根据名称搜索产品图片（模糊匹配）
+  /// 根据名称搜索产品图片（模糊匹配，转义特殊字符）
   Future<List<ProductImage>> searchProductImages(String keyword) async {
     final db = await database;
+    final escapedKeyword = _escapeLikePattern(keyword);
     final List<Map<String, dynamic>> maps = await db.query(
       tableProductImages,
-      where: 'name LIKE ?',
-      whereArgs: ['%$keyword%'],
+      where: 'name LIKE ? ESCAPE "\\"',
+      whereArgs: ['%$escapedKeyword%'],
       orderBy: 'created_at DESC',
       limit: 10,
     );
@@ -864,17 +894,26 @@ class DatabaseService {
 
   // ==================== 相似物品搜索 ====================
 
-  /// 搜索相似物品（用于历史数据复用）
+  /// 搜索相似物品（用于历史数据复用，转义特殊字符）
   Future<List<Item>> searchSimilarItems(String name) async {
     final db = await database;
+    final escapedName = _escapeLikePattern(name);
     final List<Map<String, dynamic>> maps = await db.query(
       tableItems,
-      where: 'name LIKE ?',
-      whereArgs: ['%$name%'],
+      where: 'name LIKE ? ESCAPE "\\"',
+      whereArgs: ['%$escapedName%'],
       orderBy: 'updated_at DESC',
       limit: 10,
     );
     return maps.map((map) => Item.fromJson(map)).toList();
+  }
+
+  /// 转义 SQL LIKE 查询中的特殊字符
+  String _escapeLikePattern(String pattern) {
+    return pattern
+        .replaceAll('\\', '\\\\')
+        .replaceAll('%', '\\%')
+        .replaceAll('_', '\\_');
   }
 
   // ==================== AI分析缓存操作 ====================

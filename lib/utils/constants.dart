@@ -20,8 +20,19 @@ class AppConstants {
   static const int defaultSyncInterval = 30;
 
   /// 状态阈值配置
-  static const int urgentDaysThreshold = 3;
-  static const int expiringSoonDaysThreshold = 14;
+  static const int urgentDaysThreshold = 3;          // 急需处理阈值（天）
+  static const int expiringSoonDaysThreshold = 14;   // 即将过期阈值（天）
+  static const int badgeDaysThreshold = 3;           // 角标显示阈值（天）
+  static const int warningDaysThreshold = 7;         // 警告显示阈值（天）
+
+  /// AI分析缓存有效期（天）
+  static const int aiCacheValidDays = 30;
+
+  /// 搜索结果最大数量
+  static const int searchResultLimit = 10;
+
+  /// 最近物品显示数量
+  static const int recentItemsLimit = 5;
 }
 
 /// 预设分类（用户可添加更多）
