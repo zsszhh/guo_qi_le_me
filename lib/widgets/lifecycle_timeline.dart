@@ -79,6 +79,11 @@ class LifecycleTimeline extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final totalWidth = constraints.maxWidth;
+        // 今天圆点位置（确保在进度条范围内）
+        final dotLeft = (totalWidth * progress - 6).clamp(0.0, totalWidth - 12);
+        // "今天"文字位置（居中对齐圆点中心，不限制边界）
+        // 红点中心在 dotLeft + 6，文字容器宽 48px，居中需要 left = 中心 - 24
+        final todayLabelLeft = dotLeft - 18;
 
         return Stack(
           clipBehavior: Clip.none,
@@ -142,7 +147,7 @@ class LifecycleTimeline extends StatelessWidget {
                       ),
                       // 今天圆点 - 在进度条上
                       Positioned(
-                        left: totalWidth * progress - 6,
+                        left: dotLeft,
                         top: 0,
                         child: Container(
                           width: 12,
@@ -191,7 +196,7 @@ class LifecycleTimeline extends StatelessWidget {
             ),
             // "今天"文字 - 在进度条上方，居中对齐圆点
             Positioned(
-              left: totalWidth * progress - 24,
+              left: todayLabelLeft,
               bottom: 56, // 上移到进度条上方
               child: SizedBox(
                 width: 48,

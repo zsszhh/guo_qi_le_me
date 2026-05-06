@@ -205,7 +205,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
           Icon(
             Icons.inventory_2_outlined,
             size: 64,
-            color: AppColors.onSurfaceVariant.withOpacity(0.5),
+            color: AppColors.onSurfaceVariant.withValues(alpha:0.5),
           ),
           const SizedBox(height: AppSpacing.md),
           Text(
@@ -282,11 +282,11 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
         padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.primaryContainer.withOpacity(0.3)
+              ? AppColors.primaryContainer.withValues(alpha:0.3)
               : AppColors.surfaceContainerLowest,
           borderRadius: AppRadius.large,
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.outlineVariant.withOpacity(0.3),
+            color: isSelected ? AppColors.primary : AppColors.outlineVariant.withValues(alpha:0.3),
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -330,7 +330,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
         color: AppColors.surfaceContainerHigh,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha:0.1),
             blurRadius: 8,
             offset: const Offset(0, -2),
           ),

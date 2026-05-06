@@ -107,13 +107,13 @@ class StatusBadge extends StatelessWidget {
         );
       case ItemStatus.expired:
         return (
-          AppColors.errorContainer.withOpacity(0.5),
+          AppColors.errorContainer.withValues(alpha:0.5),
           AppColors.onErrorContainer,
           '已过期',
         );
       case ItemStatus.consumed:
         return (
-          AppColors.primaryContainer.withOpacity(0.3),
+          AppColors.primaryContainer.withValues(alpha:0.3),
           AppColors.primary,
           '已使用',
         );

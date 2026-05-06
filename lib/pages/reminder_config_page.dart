@@ -42,14 +42,12 @@ class _ReminderConfigPageState extends ConsumerState<ReminderConfigPage> {
         _remind14Days = config.remind14Days;
         _pushNotification = config.pushNotification;
         _soundEnabled = config.soundEnabled;
-        if (config.reminderTime != null) {
-          final parts = config.reminderTime!.split(':');
-          if (parts.length == 2) {
-            _reminderTime = TimeOfDay(
-              hour: int.parse(parts[0]),
-              minute: int.parse(parts[1]),
-            );
-          }
+        final parts = config.reminderTime.split(':');
+        if (parts.length == 2) {
+          _reminderTime = TimeOfDay(
+            hour: int.parse(parts[0]),
+            minute: int.parse(parts[1]),
+          );
         }
         _isLoading = false;
       });
@@ -160,7 +158,7 @@ class _ReminderConfigPageState extends ConsumerState<ReminderConfigPage> {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: AppColors.primaryContainer.withOpacity(0.3),
+                      color: AppColors.primaryContainer.withValues(alpha:0.3),
                       borderRadius: AppRadius.medium,
                     ),
                     child: Icon(Icons.access_time, color: AppColors.primary, size: 22),
@@ -181,7 +179,7 @@ class _ReminderConfigPageState extends ConsumerState<ReminderConfigPage> {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: AppColors.error.withOpacity(0.1),
+                      color: AppColors.error.withValues(alpha:0.1),
                       borderRadius: AppRadius.medium,
                     ),
                     child: Icon(Icons.warning_amber, color: AppColors.error, size: 22),
@@ -196,7 +194,7 @@ class _ReminderConfigPageState extends ConsumerState<ReminderConfigPage> {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: AppColors.secondary.withOpacity(0.1),
+                      color: AppColors.secondary.withValues(alpha:0.1),
                       borderRadius: AppRadius.medium,
                     ),
                     child: Icon(Icons.schedule, color: AppColors.secondary, size: 22),
@@ -211,7 +209,7 @@ class _ReminderConfigPageState extends ConsumerState<ReminderConfigPage> {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: AppColors.primary.withValues(alpha:0.1),
                       borderRadius: AppRadius.medium,
                     ),
                     child: Icon(Icons.event, color: AppColors.primary, size: 22),
@@ -230,7 +228,7 @@ class _ReminderConfigPageState extends ConsumerState<ReminderConfigPage> {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: AppColors.primaryContainer.withOpacity(0.3),
+                      color: AppColors.primaryContainer.withValues(alpha:0.3),
                       borderRadius: AppRadius.medium,
                     ),
                     child: Icon(Icons.notifications, color: AppColors.primary, size: 22),
@@ -245,7 +243,7 @@ class _ReminderConfigPageState extends ConsumerState<ReminderConfigPage> {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: AppColors.primaryContainer.withOpacity(0.3),
+                      color: AppColors.primaryContainer.withValues(alpha:0.3),
                       borderRadius: AppRadius.medium,
                     ),
                     child: Icon(Icons.volume_up, color: AppColors.primary, size: 22),
@@ -263,7 +261,7 @@ class _ReminderConfigPageState extends ConsumerState<ReminderConfigPage> {
                   child: Container(
                     padding: const EdgeInsets.all(AppSpacing.md),
                     decoration: BoxDecoration(
-                      color: AppColors.surfaceContainer.withOpacity(0.5),
+                      color: AppColors.surfaceContainer.withValues(alpha:0.5),
                       borderRadius: AppRadius.medium,
                     ),
                     child: Column(

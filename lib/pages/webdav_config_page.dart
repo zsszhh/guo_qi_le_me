@@ -322,7 +322,7 @@ class _WebDAVConfigPageState extends ConsumerState<WebDAVConfigPage> {
                     onChanged: (value) {
                       setState(() => _enabled = value);
                     },
-                    activeColor: AppColors.primary,
+                    activeThumbColor: AppColors.primary,
                   ),
 
                   SwitchListTile(
@@ -342,7 +342,7 @@ class _WebDAVConfigPageState extends ConsumerState<WebDAVConfigPage> {
                     onChanged: (value) {
                       setState(() => _autoSync = value);
                     },
-                    activeColor: AppColors.primary,
+                    activeThumbColor: AppColors.primary,
                   ),
 
                   TextFormField(
@@ -464,7 +464,7 @@ class _WebDAVConfigPageState extends ConsumerState<WebDAVConfigPage> {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: statusColor.withOpacity(0.1),
+        color: statusColor.withValues(alpha:0.1),
         borderRadius: AppRadius.large,
       ),
       child: Row(

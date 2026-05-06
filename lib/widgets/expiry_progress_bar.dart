@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
-import '../utils/date_utils.dart' as app_utils;
 
 /// 过期进度条组件
 class ExpiryProgressBar extends StatelessWidget {

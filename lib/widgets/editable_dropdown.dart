@@ -33,7 +33,6 @@ class EditableDropdown extends StatefulWidget {
 class _EditableDropdownState extends State<EditableDropdown> {
   final CustomOptionService _optionService = CustomOptionService();
   List<String> _options = [];
-  Set<String> _customOptionIds = {};  // 存储自定义选项的 ID
   bool _isLoading = true;
   final _newOptionController = TextEditingController();
 
@@ -66,17 +65,9 @@ class _EditableDropdownState extends State<EditableDropdown> {
       widget.type,
       category: widget.category,
     );
-    
-    // 获取自定义选项的 ID
-    final customOptions = await _getCustomOptions();
-    final customIds = <String>{};
-    for (final option in customOptions) {
-      customIds.add(option.id);
-    }
 
     setState(() {
       _options = allOptions;
-      _customOptionIds = customIds;
       _isLoading = false;
     });
   }

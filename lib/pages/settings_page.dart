@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
 import '../theme/colors.dart';
 import '../theme/typography.dart';
 import '../theme/spacing.dart';
@@ -69,7 +71,7 @@ class SettingsPage extends StatelessWidget {
               ),
               Divider(
                 height: 1,
-                color: AppColors.outlineVariant.withOpacity(0.3),
+                color: AppColors.outlineVariant.withValues(alpha:0.3),
               ),
               _buildSettingsItem(
                 icon: Icons.history,
@@ -106,7 +108,7 @@ class SettingsPage extends StatelessWidget {
               ),
               Divider(
                 height: 1,
-                color: AppColors.outlineVariant.withOpacity(0.3),
+                color: AppColors.outlineVariant.withValues(alpha:0.3),
               ),
               _buildSettingsItem(
                 icon: Icons.backup,
@@ -131,7 +133,7 @@ class SettingsPage extends StatelessWidget {
               ),
               Divider(
                 height: 1,
-                color: AppColors.outlineVariant.withOpacity(0.3),
+                color: AppColors.outlineVariant.withValues(alpha:0.3),
               ),
               _buildSettingsItem(
                 icon: Icons.privacy_tip_outlined,
@@ -176,11 +178,11 @@ class SettingsPage extends StatelessWidget {
         color: AppColors.surfaceContainerLowest,
         borderRadius: AppRadius.large,
         border: Border.all(
-          color: AppColors.outlineVariant.withOpacity(0.3),
+          color: AppColors.outlineVariant.withValues(alpha:0.3),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha:0.04),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -208,7 +210,7 @@ class SettingsPage extends StatelessWidget {
           // 分隔线
           Divider(
             height: 1,
-            color: AppColors.outlineVariant.withOpacity(0.3),
+            color: AppColors.outlineVariant.withValues(alpha:0.3),
           ),
           // 内容
           ...children,
@@ -237,7 +239,7 @@ class SettingsPage extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: (iconColor ?? AppColors.primary).withOpacity(0.1),
+                color: (iconColor ?? AppColors.primary).withValues(alpha:0.1),
                 borderRadius: AppRadius.medium,
               ),
               child: Icon(
@@ -339,7 +341,22 @@ class SettingsPage extends StatelessWidget {
                           onTap: () async {
                             Navigator.pop(context);
                             try {
-                              await backupService.restoreFromLocalBackup(backup.filePath!);
+                              // 查找对应的图片备份文件
+                              String? imagesBackupPath;
+                              if (backup.filePath != null) {
+                                final dir = p.dirname(backup.filePath!);
+                                final fileName = p.basenameWithoutExtension(backup.filePath!);
+                                imagesBackupPath = p.join(dir, '${fileName}_images.zip');
+                                // 检查图片备份是否存在
+                                if (!await File(imagesBackupPath).exists()) {
+                                  imagesBackupPath = null;
+                                }
+                              }
+
+                              await backupService.restoreFromLocalBackup(
+                                backup.filePath!,
+                                imagesBackupPath: imagesBackupPath,
+                              );
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(content: Text('恢复成功，请重启应用')),

@@ -410,6 +410,7 @@ class _AIInputPageState extends ConsumerState<AIInputPage> {
         },
         listenFor: const Duration(seconds: 10),
         pauseFor: const Duration(seconds: 3),
+        // ignore: deprecated_member_use
         partialResults: true,
       );
 

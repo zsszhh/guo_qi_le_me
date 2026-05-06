@@ -59,7 +59,7 @@ class AIConfigListPage extends ConsumerWidget {
             Icon(
               Icons.settings_outlined,
               size: 64,
-              color: AppColors.onSurfaceVariant.withOpacity(0.4),
+              color: AppColors.onSurfaceVariant.withValues(alpha:0.4),
             ),
             const SizedBox(height: AppSpacing.md),
             Text(
@@ -72,7 +72,7 @@ class AIConfigListPage extends ConsumerWidget {
             Text(
               '点击下方按钮添加AI服务配置',
               style: AppTypography.bodySm.copyWith(
-                color: AppColors.onSurfaceVariant.withOpacity(0.7),
+                color: AppColors.onSurfaceVariant.withValues(alpha:0.7),
               ),
             ),
           ],
@@ -94,7 +94,7 @@ class AIConfigListPage extends ConsumerWidget {
       child: ListView.separated(
         padding: const EdgeInsets.all(AppSpacing.md),
         itemCount: state.configs.length,
-        separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
+        separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.sm),
         itemBuilder: (context, index) {
           final config = state.configs[index];
           return _buildConfigCard(context, ref, config);
@@ -117,7 +117,7 @@ class AIConfigListPage extends ConsumerWidget {
         borderRadius: AppRadius.medium,
         side: BorderSide(
           color: config.isDefault
-              ? AppColors.primary.withOpacity(0.5)
+              ? AppColors.primary.withValues(alpha:0.5)
               : AppColors.outlineVariant,
           width: config.isDefault ? 1.5 : 1,
         ),
@@ -140,7 +140,7 @@ class AIConfigListPage extends ConsumerWidget {
                     height: 40,
                     decoration: BoxDecoration(
                       color: config.provider.isPreset
-                          ? AppColors.primaryContainer.withOpacity(0.3)
+                          ? AppColors.primaryContainer.withValues(alpha:0.3)
                           : AppColors.surfaceContainerHigh,
                       borderRadius: AppRadius.small,
                     ),
@@ -214,7 +214,7 @@ class AIConfigListPage extends ConsumerWidget {
                       shape: BoxShape.circle,
                       color: config.enabled
                           ? AppColors.primary
-                          : AppColors.onSurfaceVariant.withOpacity(0.4),
+                          : AppColors.onSurfaceVariant.withValues(alpha:0.4),
                     ),
                   ),
                 ],

@@ -40,7 +40,7 @@ class AppTheme {
       scaffoldBackgroundColor: AppColors.background,
       textTheme: textTheme,
       appBarTheme: AppBarTheme(
-        backgroundColor: AppColors.surface.withOpacity(0.8),
+        backgroundColor: AppColors.surface.withValues(alpha:0.8),
         foregroundColor: AppColors.onSurface,
         elevation: 0,
         centerTitle: true,
@@ -52,7 +52,7 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: AppRadius.large,
           side: BorderSide(
-            color: AppColors.outlineVariant.withOpacity(0.3),
+            color: AppColors.outlineVariant.withValues(alpha:0.3),
             width: 1,
           ),
         ),
@@ -106,9 +106,9 @@ class AppTheme {
         ),
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: AppColors.surface.withOpacity(0.9),
+        backgroundColor: AppColors.surface.withValues(alpha:0.9),
         selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.onSurfaceVariant.withOpacity(0.6),
+        unselectedItemColor: AppColors.onSurfaceVariant.withValues(alpha:0.6),
         type: BottomNavigationBarType.fixed,
         elevation: 0,
       ),
@@ -121,7 +121,7 @@ class AppTheme {
         ),
       ),
       dividerTheme: DividerThemeData(
-        color: AppColors.outlineVariant.withOpacity(0.3),
+        color: AppColors.outlineVariant.withValues(alpha:0.3),
         thickness: 1,
       ),
       chipTheme: ChipThemeData(

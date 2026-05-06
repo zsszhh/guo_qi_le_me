@@ -77,13 +77,13 @@ class HomePage extends ConsumerWidget {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(24),
                         borderSide: BorderSide(
-                          color: AppColors.outlineVariant.withOpacity(0.3),
+                          color: AppColors.outlineVariant.withValues(alpha:0.3),
                         ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(24),
                         borderSide: BorderSide(
-                          color: AppColors.outlineVariant.withOpacity(0.3),
+                          color: AppColors.outlineVariant.withValues(alpha:0.3),
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
@@ -265,11 +265,11 @@ class HomePage extends ConsumerWidget {
         color: backgroundColor,
         borderRadius: AppRadius.large,
         border: Border.all(
-          color: color.withOpacity(0.2),
+          color: color.withValues(alpha:0.2),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha:0.04),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -312,7 +312,7 @@ class HomePage extends ConsumerWidget {
           Icon(
             Icons.inbox_outlined,
             size: 64,
-            color: AppColors.onSurfaceVariant.withOpacity(0.5),
+            color: AppColors.onSurfaceVariant.withValues(alpha:0.5),
           ),
           const SizedBox(height: AppSpacing.md),
           Text(
@@ -349,7 +349,7 @@ class HomePage extends ConsumerWidget {
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: Card(
-            color: AppColors.primaryContainer.withOpacity(0.3),
+            color: AppColors.primaryContainer.withValues(alpha:0.3),
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.lg),
               child: Row(

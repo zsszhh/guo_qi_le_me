@@ -70,7 +70,7 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
   String? _location;
   String _unit = '个';
   bool _isSaving = false;
-  bool _isLoading = false;
+  final bool _isLoading = false;
   String? _imageUrl;
   File? _selectedImage;
 
@@ -466,13 +466,13 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
                       ? Image.file(
                           _selectedImage!,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => _buildPlaceholder(),
+                          errorBuilder: (context, error, stackTrace) => _buildPlaceholder(),
                         )
                       : (_imageUrl != null
                           ? Image.file(
                               File(_imageUrl!),
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => _buildPlaceholder(),
+                              errorBuilder: (context, error, stackTrace) => _buildPlaceholder(),
                             )
                           : _buildPlaceholder()),
                 )
@@ -690,7 +690,7 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
                                 width: 80,
                                 height: 60,
                                 fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Container(
+                                errorBuilder: (context, error, stackTrace) => Container(
                                   width: 80,
                                   height: 60,
                                   color: AppColors.surfaceContainer,
@@ -927,7 +927,7 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
                               width: 48,
                               height: 48,
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Container(
+                              errorBuilder: (context, error, stackTrace) => Container(
                                 width: 48,
                                 height: 48,
                                 color: AppColors.surfaceContainer,

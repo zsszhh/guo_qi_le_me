@@ -186,7 +186,7 @@ class PrivacyPolicyPage extends StatelessWidget {
 
             // 分隔线
             Divider(
-              color: AppColors.outlineVariant.withOpacity(0.3),
+              color: AppColors.outlineVariant.withValues(alpha:0.3),
               height: 1,
             ),
 

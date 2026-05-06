@@ -360,9 +360,7 @@ class WebDAVService {
     }
 
     final zipBytes = ZipEncoder().encode(archive);
-    if (zipBytes != null) {
-      await File(targetPath).writeAsBytes(zipBytes);
-    }
+    await File(targetPath).writeAsBytes(zipBytes);
   }
 
   /// 解压 ZIP 文件到目录

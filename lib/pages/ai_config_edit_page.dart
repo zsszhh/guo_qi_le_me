@@ -237,7 +237,7 @@ class _AIConfigEditPageState extends ConsumerState<AIConfigEditPage> {
               onChanged: (value) {
                 setState(() => _enabled = value);
               },
-              activeColor: AppColors.primary,
+              activeThumbColor: AppColors.primary,
             ),
             const SizedBox(height: AppSpacing.xl),
 
@@ -276,7 +276,7 @@ class _AIConfigEditPageState extends ConsumerState<AIConfigEditPage> {
   /// 构建提供商选择器
   Widget _buildProviderSelector() {
     return DropdownButtonFormField<AIProvider>(
-      value: _selectedProvider,
+      initialValue: _selectedProvider,
       decoration: const InputDecoration(
         hintText: '选择模型提供商',
       ),
@@ -297,7 +297,7 @@ class _AIConfigEditPageState extends ConsumerState<AIConfigEditPage> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryContainer.withOpacity(0.5),
+                    color: AppColors.primaryContainer.withValues(alpha:0.5),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
@@ -333,7 +333,7 @@ class _AIConfigEditPageState extends ConsumerState<AIConfigEditPage> {
     final models = _getAvailableModels(_selectedProvider);
 
     return DropdownButtonFormField<String>(
-      value: models.contains(_selectedModel) ? _selectedModel : null,
+      initialValue: models.contains(_selectedModel) ? _selectedModel : null,
       decoration: const InputDecoration(
         hintText: '选择默认模型',
       ),

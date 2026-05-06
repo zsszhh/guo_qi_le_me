@@ -69,17 +69,6 @@ class ReminderCenterPage extends ConsumerWidget {
 
   /// 构建周统计摘要卡片
   Widget _buildWeeklyOutlook(BuildContext context, ReminderState state) {
-    final expiringToday = state.urgentItems
-        .where((item) => app_utils.DateUtils.daysRemaining(item.expiryDate) <= 0)
-        .length;
-    final next3Days = state.urgentItems
-        .where((item) {
-          final days = app_utils.DateUtils.daysRemaining(item.expiryDate);
-          return days > 0 && days <= 3;
-        })
-        .length;
-    final safeCount = state.expiringSoonItems.length;
-
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
@@ -90,7 +79,7 @@ class ReminderCenterPage extends ConsumerWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha:0.04),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -140,8 +129,8 @@ class ReminderCenterPage extends ConsumerWidget {
                 child: _buildStatCard(
                   count: state.expiredItems.length,
                   label: '已过期',
-                  backgroundColor: AppColors.errorContainer.withOpacity(0.4),
-                  borderColor: AppColors.errorContainer.withOpacity(0.5),
+                  backgroundColor: AppColors.errorContainer.withValues(alpha:0.4),
+                  borderColor: AppColors.errorContainer.withValues(alpha:0.5),
                   textColor: AppColors.onErrorContainer,
                 ),
               ),
@@ -150,8 +139,8 @@ class ReminderCenterPage extends ConsumerWidget {
                 child: _buildStatCard(
                   count: state.urgentItems.length,
                   label: '三天内',
-                  backgroundColor: AppColors.secondaryContainer.withOpacity(0.4),
-                  borderColor: AppColors.secondaryContainer.withOpacity(0.5),
+                  backgroundColor: AppColors.secondaryContainer.withValues(alpha:0.4),
+                  borderColor: AppColors.secondaryContainer.withValues(alpha:0.5),
                   textColor: AppColors.onSecondaryContainer,
                 ),
               ),
@@ -276,7 +265,7 @@ class ReminderCenterPage extends ConsumerWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: AppColors.primaryContainer.withOpacity(0.3),
+            color: AppColors.primaryContainer.withValues(alpha:0.3),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: AppColors.primaryContainer,
@@ -336,13 +325,13 @@ class ReminderCenterPage extends ConsumerWidget {
 
     if (isExpired) {
       accentColor = AppColors.error;
-      borderColor = AppColors.error.withOpacity(0.2);
+      borderColor = AppColors.error.withValues(alpha:0.2);
     } else if (isUrgent) {
       accentColor = AppColors.secondary;
-      borderColor = AppColors.secondary.withOpacity(0.2);
+      borderColor = AppColors.secondary.withValues(alpha:0.2);
     } else {
       accentColor = AppColors.primary;
-      borderColor = AppColors.outlineVariant.withOpacity(0.3);
+      borderColor = AppColors.outlineVariant.withValues(alpha:0.3);
     }
 
     return Container(
@@ -352,7 +341,7 @@ class ReminderCenterPage extends ConsumerWidget {
         border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha:0.04),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -404,7 +393,7 @@ class ReminderCenterPage extends ConsumerWidget {
                             child: Image.network(
                               item.imageUrl!,
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => _buildCategoryIcon(item),
+                              errorBuilder: (context, error, stackTrace) => _buildCategoryIcon(item),
                             ),
                           )
                         : _buildCategoryIcon(item),
@@ -637,22 +626,6 @@ class ReminderCenterPage extends ConsumerWidget {
     );
   }
 
-  /// 标记为已使用
-  void _markAsConsumed(BuildContext context, WidgetRef ref, String itemId) {
-    // 立即从 UI 中移除
-    ref.read(reminderProvider.notifier).removeItem(itemId);
-
-    // 异步更新数据库
-    ref.read(itemsProvider.notifier).markAsConsumed(itemId);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('已标记为使用完毕'),
-        duration: Duration(seconds: 2),
-      ),
-    );
-  }
-
   /// 显示忽略确认对话框
   void _showDismissDialog(BuildContext context, WidgetRef ref, Item item) {
     showDialog(
@@ -696,7 +669,7 @@ class ReminderCenterPage extends ConsumerWidget {
             Icon(
               Icons.check_circle_outline,
               size: 64,
-              color: AppColors.primary.withOpacity(0.5),
+              color: AppColors.primary.withValues(alpha:0.5),
             ),
             const SizedBox(height: AppSpacing.md),
             Text(

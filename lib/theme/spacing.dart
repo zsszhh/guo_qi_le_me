@@ -90,7 +90,7 @@ class AppShadows {
   /// 卡片阴影
   static List<BoxShadow> get card => [
     BoxShadow(
-      color: const Color(0xFF000000).withOpacity(0.04),
+      color: const Color(0xFF000000).withValues(alpha:0.04),
       blurRadius: 12,
       offset: const Offset(0, 4),
     ),
@@ -99,7 +99,7 @@ class AppShadows {
   /// 按钮阴影
   static List<BoxShadow> get button => [
     BoxShadow(
-      color: const Color(0xFF4ADE80).withOpacity(0.25),
+      color: const Color(0xFF4ADE80).withValues(alpha:0.25),
       blurRadius: 24,
       offset: const Offset(0, 8),
     ),
@@ -108,7 +108,7 @@ class AppShadows {
   /// 底部导航栏阴影
   static List<BoxShadow> get bottomNav => [
     BoxShadow(
-      color: const Color(0xFF000000).withOpacity(0.04),
+      color: const Color(0xFF000000).withValues(alpha:0.04),
       blurRadius: 20,
       offset: const Offset(0, -4),
     ),

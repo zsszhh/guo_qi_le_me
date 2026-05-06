@@ -55,12 +55,12 @@ class AIButton extends StatelessWidget {
             ),
             borderRadius: AppRadius.fullBorder,
             border: Border.all(
-              color: AppColors.primaryFixed.withOpacity(0.5),
+              color: AppColors.primaryFixed.withValues(alpha:0.5),
               width: 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primaryContainer.withOpacity(0.25),
+                color: AppColors.primaryContainer.withValues(alpha:0.25),
                 blurRadius: 24,
                 offset: const Offset(0, 8),
               ),
@@ -114,11 +114,11 @@ class AIButton extends StatelessWidget {
             color: AppColors.surfaceContainerHigh,
             borderRadius: AppRadius.fullBorder,
             border: Border.all(
-              color: AppColors.outlineVariant.withOpacity(0.5),
+              color: AppColors.outlineVariant.withValues(alpha:0.5),
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
+                color: Colors.black.withValues(alpha:0.04),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -158,7 +158,7 @@ class AIButton extends StatelessWidget {
             )
           : Icon(icon, color: AppColors.primary),
       style: IconButton.styleFrom(
-        backgroundColor: AppColors.primaryContainer.withOpacity(0.2),
+        backgroundColor: AppColors.primaryContainer.withValues(alpha:0.2),
         shape: RoundedRectangleBorder(
           borderRadius: AppRadius.fullBorder,
         ),

@@ -1,5 +1,3 @@
-import 'package:uuid/uuid.dart';
-
 /// 产品图片实体
 /// 用于存储产品名称与图片的映射关系，支持图片复用
 class ProductImage {
