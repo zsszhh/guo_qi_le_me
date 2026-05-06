@@ -4,19 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
-import 'package:uuid/uuid.dart';
 import '../theme/colors.dart';
 import '../theme/typography.dart';
 import '../theme/spacing.dart';
-import '../widgets/ai_button.dart';
+import '../widgets/photo_recognition_button.dart';
+import '../widgets/recent_items_list.dart';
 import '../providers/item_provider.dart';
 import '../models/item.dart';
 import '../models/ai_config.dart';
-import '../models/custom_option.dart';
 import '../services/ai_service.dart';
 import '../services/database_service.dart';
-import '../widgets/editable_dropdown.dart';
-import '../utils/constants.dart';
 import 'item_edit_page.dart';
 
 /// AI智能录入页面
@@ -36,11 +33,13 @@ class _AIInputPageState extends ConsumerState<AIInputPage> {
 
   @override
   Widget build(BuildContext context) {
+    final recentItemsAsync = ref.watch(recentItemsProvider);
+
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
         title: Text(
-          'AI 智能录入',
+          '添加物品',
           style: AppTypography.headlineMd.copyWith(
             color: AppColors.onSurface,
           ),
@@ -48,132 +47,155 @@ class _AIInputPageState extends ConsumerState<AIInputPage> {
         backgroundColor: AppColors.surface,
         elevation: 0,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // 拍照识别卡片
-            _buildInputCard(
-              icon: Icons.photo_camera,
-              title: '拍照识别',
-              subtitle: '拍摄物品包装自动识别信息',
-              color: AppColors.primary,
-              onTap: () => _handlePhotoRecognition(),
-            ),
-            const SizedBox(height: AppSpacing.md),
-
-            // 语音录入卡片
-            _buildInputCard(
-              icon: Icons.mic,
-              title: '语音录入',
-              subtitle: '说出物品信息自动解析',
-              color: AppColors.secondary,
-              onTap: () => _handleVoiceInput(),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-
-            // 分隔线
-            Row(
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const Expanded(child: Divider()),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                  child: Text(
-                    '或者',
-                    style: AppTypography.bodySm.copyWith(
-                      color: AppColors.onSurfaceVariant,
+                // 标题区域
+                _buildHeader(),
+                const SizedBox(height: AppSpacing.xl),
+
+                // 居中的拍照识别按钮
+                PhotoRecognitionButton(
+                  onTap: () => _handlePhotoRecognition(),
+                  isLoading: _isLoading,
+                ),
+                const SizedBox(height: AppSpacing.xl),
+
+                // 语音录入按钮
+                _buildVoiceButton(),
+                const SizedBox(height: AppSpacing.xl),
+
+                // 最近添加的物品
+                recentItemsAsync.when(
+                  data: (items) => _buildRecentItems(items),
+                  loading: () => const SizedBox.shrink(),
+                  error: (error, stackTrace) => const SizedBox.shrink(),
+                ),
+
+                // 手动录入链接
+                _buildManualEntryLink(),
+              ],
+            ),
+          ),
+
+          // 加载指示器
+          if (_isLoading)
+            Positioned.fill(
+              child: Container(
+                color: Colors.black.withValues(alpha: 0.3),
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.all(AppSpacing.lg),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const CircularProgressIndicator(),
+                        const SizedBox(height: AppSpacing.md),
+                        Text(
+                          _loadingText,
+                          style: AppTypography.bodyBase,
+                        ),
+                      ],
                     ),
                   ),
                 ),
-                const Expanded(child: Divider()),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.lg),
-
-            // 手动录入按钮
-            AIButton(
-              type: AIButtonType.secondary,
-              label: '手动录入',
-              icon: Icons.edit,
-              onPressed: () => _handleManualInput(),
-            ),
-
-            // 加载指示器
-            if (_isLoading) ...[
-              const SizedBox(height: AppSpacing.xl),
-              Center(
-                child: Column(
-                  children: [
-                    const CircularProgressIndicator(),
-                    const SizedBox(height: AppSpacing.md),
-                    Text(_loadingText),
-                  ],
-                ),
               ),
-            ],
-          ],
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// 构建标题区域
+  Widget _buildHeader() {
+    return Column(
+      children: [
+        Text(
+          '快速添加物品',
+          style: AppTypography.titleLg.copyWith(
+            color: AppColors.onSurface,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Text(
+          '拍照或语音录入，让AI自动识别物品信息',
+          style: AppTypography.bodySm.copyWith(
+            color: AppColors.onSurfaceVariant,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+
+  /// 构建语音录入按钮
+  Widget _buildVoiceButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: _isLoading ? null : () => _handleVoiceInput(),
+        icon: const Icon(Icons.mic),
+        label: const Text('语音录入'),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.secondary,
+          side: BorderSide(color: AppColors.secondary.withValues(alpha: 0.5)),
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildInputCard({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: _isLoading ? null : onTap,
-        borderRadius: AppRadius.large,
-        child: Container(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: AppRadius.large,
-            border: Border.all(
-              color: color.withOpacity(0.3),
-            ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.2),
-                  borderRadius: AppRadius.medium,
-                ),
-                child: Icon(icon, color: color, size: 28),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: AppTypography.titleLg.copyWith(
-                        color: color,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      subtitle,
-                      style: AppTypography.bodySm.copyWith(
-                        color: AppColors.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(Icons.chevron_right, color: color),
-            ],
+  /// 构建最近物品区域
+  Widget _buildRecentItems(List<Item> items) {
+    if (items.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      children: [
+        RecentItemsList(
+          items: items,
+          onTap: (item) => _handleRecentItemTap(item),
+        ),
+        const SizedBox(height: AppSpacing.lg),
+      ],
+    );
+  }
+
+  /// 构建手动录入链接
+  Widget _buildManualEntryLink() {
+    return TextButton.icon(
+      onPressed: _isLoading ? null : () => _handleManualInput(),
+      icon: const Icon(Icons.edit, size: 18),
+      label: const Text('手动录入'),
+      style: TextButton.styleFrom(
+        foregroundColor: AppColors.onSurfaceVariant,
+      ),
+    );
+  }
+
+  /// 处理最近物品点击
+  void _handleRecentItemTap(Item item) {
+    // 跳转到编辑页面，预填充数据
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => ItemEditPage(
+          prefilledData: PrefilledData(
+            name: item.name,
+            category: item.category,
+            brand: item.brand,
+            specification: item.specification,
           ),
         ),
       ),
