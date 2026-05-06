@@ -414,6 +414,17 @@ class DatabaseService {
     return Sqflite.firstIntValue(result) ?? 0;
   }
 
+  /// 获取最近添加的物品
+  Future<List<Item>> getRecentItems({int limit = 5}) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      tableItems,
+      orderBy: 'created_at DESC',
+      limit: limit,
+    );
+    return maps.map((map) => Item.fromJson(map)).toList();
+  }
+
   /// 按状态统计物品数量
   Future<Map<String, int>> getItemCountByStatus() async {
     final db = await database;
