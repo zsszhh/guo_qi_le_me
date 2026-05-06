@@ -44,11 +44,7 @@ class ImagePreprocessingService {
     // 2. 锐化处理（使用卷积核）
     enhanced = img.convolution(
       enhanced,
-      filter: [
-        [0, -1, 0],
-        [-1, 5, -1],
-        [0, -1, 0]
-      ],
+      filter: [0, -1, 0, -1, 5, -1, 0, -1, 0],
     );
 
     // 3. 自适应亮度调整

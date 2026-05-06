@@ -615,7 +615,6 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
       showTitleActions: true,
       minTime: minDate,
       maxTime: maxDate,
-      initialDate: initialDate,
       locale: LocaleType.zh,
       onConfirm: (date) {
         setState(() {
