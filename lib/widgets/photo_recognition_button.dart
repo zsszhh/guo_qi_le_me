@@ -73,7 +73,7 @@ class PhotoRecognitionButton extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '📸 拍照识别',
+                  'Photo Recognition',
                   style: AppTypography.bodySm.copyWith(
                     color: AppColors.onPrimaryContainer.withValues(alpha: 0.8),
                   ),

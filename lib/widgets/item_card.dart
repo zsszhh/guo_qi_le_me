@@ -152,12 +152,15 @@ class ItemCard extends StatelessWidget {
             ? '今天添加'
             : '$days天前添加';
 
-    if (location != null) {
-      parts.add(Text(
-        location!,
-        style: AppTypography.bodySm.copyWith(
-          color: AppColors.primary,
-          fontSize: 12,
+    if (location != null && location!.isNotEmpty) {
+      parts.add(Flexible(
+        child: Text(
+          location!,
+          style: AppTypography.bodySm.copyWith(
+            color: AppColors.primary,
+            fontSize: 12,
+          ),
+          overflow: TextOverflow.ellipsis,
         ),
       ));
     }

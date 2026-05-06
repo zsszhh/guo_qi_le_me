@@ -66,33 +66,37 @@ class LifecycleTimeline extends StatelessWidget {
   Widget _buildProgressBar(double progress) {
     final progressColor = _getProgressColor(progress);
 
-    return Stack(
-      children: [
-        // 背景轨道
-        Container(
-          height: 12,
-          decoration: BoxDecoration(
-            color: AppColors.surfaceVariant,
-            borderRadius: BorderRadius.circular(AppRadius.full),
-          ),
-        ),
-        // 进度填充
-        FractionallySizedBox(
-          widthFactor: progress,
-          child: Container(
-            height: 12,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  AppColors.primary,
-                  progressColor,
-                ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Stack(
+          children: [
+            // 背景轨道
+            Container(
+              height: 12,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: AppColors.surfaceVariant,
+                borderRadius: BorderRadius.circular(AppRadius.full),
               ),
-              borderRadius: BorderRadius.circular(AppRadius.full),
             ),
-          ),
-        ),
-      ],
+            // 进度填充
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              height: 12,
+              width: constraints.maxWidth * progress,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.primary,
+                    progressColor,
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(AppRadius.full),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 

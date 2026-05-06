@@ -138,18 +138,64 @@ class _AIInputPageState extends ConsumerState<AIInputPage> {
 
   /// 构建语音录入按钮
   Widget _buildVoiceButton() {
-    return SizedBox(
-      width: double.infinity,
-      child: OutlinedButton.icon(
-        onPressed: _isLoading ? null : () => _handleVoiceInput(),
-        icon: const Icon(Icons.mic),
-        label: const Text('语音录入'),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.secondary,
-          side: BorderSide(color: AppColors.secondary.withValues(alpha: 0.5)),
-          padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.lg),
+    return Center(
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 320),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: _isLoading ? null : () => _handleVoiceInput(),
+            borderRadius: BorderRadius.circular(AppRadius.full),
+            child: Container(
+              height: 64,
+              decoration: BoxDecoration(
+                color: AppColors.surfaceContainerHigh,
+                borderRadius: BorderRadius.circular(AppRadius.full),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.5),
+                  width: 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.mic,
+                      color: AppColors.primary,
+                      size: 24,
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          '语音录入',
+                          style: AppTypography.bodyBase.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.onSurface,
+                          ),
+                        ),
+                        Text(
+                          'Voice Input',
+                          style: AppTypography.bodySm.copyWith(
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       ),
