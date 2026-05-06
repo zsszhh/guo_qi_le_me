@@ -25,7 +25,7 @@ class GuoQilLeMeApp extends StatelessWidget {
         navigatorKey: navigatorKey,
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeMode.system,
+        themeMode: ThemeMode.light,
         home: const MainNavigator(),
         routes: {
           '/ai-config': (context) => const AIConfigListPage(),
