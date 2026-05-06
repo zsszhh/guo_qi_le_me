@@ -7,8 +7,9 @@ import '../theme/typography.dart';
 import '../theme/spacing.dart';
 import '../utils/constants.dart';
 import '../utils/date_utils.dart' as app_utils;
-import '../widgets/status_badge.dart';
-import '../widgets/expiry_progress_bar.dart';
+import '../widgets/hero_image_section.dart';
+import '../widgets/lifecycle_timeline.dart';
+import '../widgets/ai_analysis_card.dart';
 import '../widgets/consume_bottom_sheet.dart';
 import 'item_edit_page.dart';
 
@@ -56,49 +57,43 @@ class ItemDetailPage extends ConsumerWidget {
 
     return Stack(
       children: [
-        // 主内容
         SingleChildScrollView(
-          padding: const EdgeInsets.only(bottom: 100), // 为底部操作栏留空间
+          padding: const EdgeInsets.only(bottom: 100),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 顶部状态卡片
-              _buildStatusCard(item, daysRemaining),
+              // Hero大图区域
+              HeroImageSection(item: item, daysRemaining: daysRemaining),
 
-              // 基本信息
+              // 标题区域
+              _buildTitleSection(item),
+
+              // 生命周期时间轴
               Padding(
-                padding: const EdgeInsets.all(AppSpacing.lg),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildSectionTitle('基本信息'),
-                    const SizedBox(height: AppSpacing.md),
-                    _buildInfoGrid(item),
-
-                    const SizedBox(height: AppSpacing.xl),
-
-                    // 日期信息
-                    _buildSectionTitle('日期信息'),
-                    const SizedBox(height: AppSpacing.md),
-                    _buildDateInfo(item, daysRemaining),
-
-                    const SizedBox(height: AppSpacing.xl),
-
-                    // 保质期进度
-                    _buildSectionTitle('保质期进度'),
-                    const SizedBox(height: AppSpacing.md),
-                    _buildProgressSection(item),
-
-                    // 备注
-                    if (item.notes != null && item.notes!.isNotEmpty) ...[
-                      const SizedBox(height: AppSpacing.xl),
-                      _buildSectionTitle('备注'),
-                      const SizedBox(height: AppSpacing.md),
-                      _buildNotes(item),
-                    ],
-                  ],
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.containerMargin),
+                child: LifecycleTimeline(
+                  purchaseDate: item.purchaseDate,
+                  expiryDate: item.expiryDate,
+                  daysRemaining: daysRemaining,
                 ),
               ),
+              const SizedBox(height: AppSpacing.md),
+
+              // AI保质期分析
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.containerMargin),
+                child: Consumer(
+                  builder: (context, ref, _) {
+                    final configAsync = ref.watch(defaultAIConfigProvider);
+                    return configAsync.when(
+                      data: (config) => AIAnalysisCard(item: item, aiConfig: config),
+                      loading: () => AIAnalysisCard(item: item),
+                      error: (error, stackTrace) => AIAnalysisCard(item: item),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xl),
             ],
           ),
         ),
@@ -114,251 +109,30 @@ class ItemDetailPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatusCard(Item item, int daysRemaining) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            _getStatusColor(item.status).withOpacity(0.1),
-            _getStatusColor(item.status).withOpacity(0.05),
-          ],
-        ),
-      ),
-      child: Column(
-        children: [
-          // 图片或图标
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              color: AppColors.surfaceContainer,
-              borderRadius: AppRadius.large,
-            ),
-            child: item.imageUrl != null
-                ? ClipRRect(
-                    borderRadius: AppRadius.large,
-                    child: Image.network(
-                      item.imageUrl!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _buildCategoryIcon(item),
-                    ),
-                  )
-                : _buildCategoryIcon(item),
-          ),
-          const SizedBox(height: AppSpacing.md),
+  /// 构建标题区域
+  Widget _buildTitleSection(Item item) {
+    final statusText = item.openedDate != null ? '已开封' : '未开封';
+    final subtitle = '${item.category}${item.specification != null ? ' · ${item.specification}' : ''} · $statusText';
 
-          // 名称
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.containerMargin),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           Text(
             item.name,
-            style: AppTypography.headlineMd.copyWith(
+            style: AppTypography.display.copyWith(
               color: AppColors.onSurface,
-              fontWeight: FontWeight.bold,
             ),
-            textAlign: TextAlign.center,
           ),
-          const SizedBox(height: AppSpacing.sm),
-
-          // 状态徽章
-          StatusBadge(
-            status: item.status,
-            daysRemaining: daysRemaining,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCategoryIcon(Item item) {
-    return Icon(
-      PresetCategories.getIcon(item.category),
-      size: 40,
-      color: AppColors.primary,
-    );
-  }
-
-  Widget _buildSectionTitle(String title) {
-    return Text(
-      title,
-      style: AppTypography.titleLg.copyWith(
-        color: AppColors.onSurface,
-        fontWeight: FontWeight.w600,
-      ),
-    );
-  }
-
-  Widget _buildInfoGrid(Item item) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
-        borderRadius: AppRadius.large,
-        border: Border.all(
-          color: AppColors.outlineVariant.withOpacity(0.3),
-        ),
-      ),
-      child: Column(
-        children: [
-          _buildInfoRow('分类', item.category),
-          if (item.subCategory != null)
-            _buildInfoRow('子分类', item.subCategory!),
-          if (item.brand != null) _buildInfoRow('品牌', item.brand!),
-          if (item.specification != null)
-            _buildInfoRow('规格', item.specification!),
-          _buildInfoRow('数量', '${item.quantity} ${item.unit}'),
-          if (item.location != null) _buildInfoRow('位置', item.location!),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
+          const SizedBox(height: AppSpacing.xs),
           Text(
-            label,
+            subtitle,
             style: AppTypography.bodyBase.copyWith(
               color: AppColors.onSurfaceVariant,
             ),
           ),
-          Text(
-            value,
-            style: AppTypography.bodyBase.copyWith(
-              color: AppColors.onSurface,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildDateInfo(Item item, int daysRemaining) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
-        borderRadius: AppRadius.large,
-        border: Border.all(
-          color: AppColors.outlineVariant.withOpacity(0.3),
-        ),
-      ),
-      child: Column(
-        children: [
-          _buildDateRow('购买日期', _formatDate(item.purchaseDate)),
-          const Divider(height: AppSpacing.lg),
-          _buildDateRow('过期日期', _formatDate(item.expiryDate),
-              highlight: true),
-          if (item.openedDate != null) ...[
-            const Divider(height: AppSpacing.lg),
-            _buildDateRow('开封日期', _formatDate(item.openedDate!)),
-          ],
-          const Divider(height: AppSpacing.lg),
-          _buildDateRow(
-            '剩余天数',
-            daysRemaining < 0 ? '已过期 ${-daysRemaining} 天' : '$daysRemaining 天',
-            valueColor: daysRemaining < 0
-                ? AppColors.error
-                : daysRemaining <= 7
-                    ? AppColors.secondary
-                    : AppColors.primary,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDateRow(String label, String value,
-      {bool highlight = false, Color? valueColor}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: AppTypography.bodyBase.copyWith(
-            color: AppColors.onSurfaceVariant,
-          ),
-        ),
-        Text(
-          value,
-          style: AppTypography.bodyBase.copyWith(
-            color: valueColor ?? (highlight ? AppColors.primary : AppColors.onSurface),
-            fontWeight: highlight ? FontWeight.bold : FontWeight.w500,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildProgressSection(Item item) {
-    final totalDays = item.expiryDate.difference(item.purchaseDate).inDays;
-    final elapsedDays = DateTime.now().difference(item.purchaseDate).inDays;
-    final progress = totalDays > 0 ? elapsedDays / totalDays : 1.0;
-
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
-        borderRadius: AppRadius.large,
-        border: Border.all(
-          color: AppColors.outlineVariant.withOpacity(0.3),
-        ),
-      ),
-      child: Column(
-        children: [
-          // 进度条
-          ExpiryProgressBar(
-            purchaseDate: item.purchaseDate,
-            expiryDate: item.expiryDate,
-            height: 8,
-          ),
-          const SizedBox(height: AppSpacing.md),
-
-          // 进度信息
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '已过 ${(progress * 100).toStringAsFixed(0)}%',
-                style: AppTypography.bodySm.copyWith(
-                  color: AppColors.onSurfaceVariant,
-                ),
-              ),
-              Text(
-                '共 $totalDays 天',
-                style: AppTypography.bodySm.copyWith(
-                  color: AppColors.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNotes(Item item) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
-        borderRadius: AppRadius.large,
-        border: Border.all(
-          color: AppColors.outlineVariant.withOpacity(0.3),
-        ),
-      ),
-      child: Text(
-        item.notes!,
-        style: AppTypography.bodyBase.copyWith(
-          color: AppColors.onSurface,
-        ),
       ),
     );
   }
@@ -370,10 +144,10 @@ class ItemDetailPage extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppColors.surface.withOpacity(0.95),
+        color: AppColors.surface.withValues(alpha: 0.95),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
@@ -383,7 +157,7 @@ class ItemDetailPage extends ConsumerWidget {
         child: Row(
           children: [
             // 编辑按钮
-            _buildActionButton(
+            _buildSquareButton(
               icon: Icons.edit_outlined,
               label: '编辑',
               onPressed: () {
@@ -396,7 +170,7 @@ class ItemDetailPage extends ConsumerWidget {
             ),
             const SizedBox(width: AppSpacing.sm),
             // 删除按钮
-            _buildActionButton(
+            _buildSquareButton(
               icon: Icons.delete_outline,
               label: '删除',
               isDestructive: true,
@@ -405,7 +179,7 @@ class ItemDetailPage extends ConsumerWidget {
             const SizedBox(width: AppSpacing.md),
             // 使用按钮（组合按钮：左边使用，右边下拉菜单）
             Expanded(
-              child: _buildSplitButton(
+              child: _buildPrimaryButton(
                 context: context,
                 ref: ref,
                 item: item,
@@ -418,8 +192,59 @@ class ItemDetailPage extends ConsumerWidget {
     );
   }
 
-  /// 构建组合按钮（左边使用，右边下拉菜单）
-  Widget _buildSplitButton({
+  /// 构建方形按钮（编辑/删除）
+  Widget _buildSquareButton({
+    required IconData icon,
+    required String label,
+    bool isDestructive = false,
+    VoidCallback? onPressed,
+  }) {
+    final isEnabled = onPressed != null;
+    return Container(
+      width: 72,
+      height: 48,
+      decoration: BoxDecoration(
+        color: isDestructive
+            ? AppColors.errorContainer.withValues(alpha: 0.3)
+            : AppColors.surfaceContainer,
+        borderRadius: AppRadius.medium,
+        border: Border.all(
+          color: isDestructive
+              ? AppColors.error.withValues(alpha: 0.3)
+              : AppColors.outlineVariant.withValues(alpha: 0.3),
+        ),
+      ),
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: AppRadius.medium,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 20,
+              color: isDestructive
+                  ? (isEnabled ? AppColors.error : AppColors.onSurfaceVariant)
+                  : (isEnabled ? AppColors.onSurface : AppColors.onSurfaceVariant),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: AppTypography.labelCaps.copyWith(
+                fontSize: 10,
+                color: isDestructive
+                    ? (isEnabled ? AppColors.error : AppColors.onSurfaceVariant)
+                    : (isEnabled ? AppColors.onSurface : AppColors.onSurfaceVariant),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 构建主要操作按钮（使用按钮）
+  Widget _buildPrimaryButton({
     required BuildContext context,
     required WidgetRef ref,
     required Item item,
@@ -472,8 +297,8 @@ class ItemDetailPage extends ConsumerWidget {
             width: 1,
             height: 24,
             color: isDisabled
-                ? AppColors.onSurfaceVariant.withOpacity(0.3)
-                : AppColors.onPrimary.withOpacity(0.3),
+                ? AppColors.onSurfaceVariant.withValues(alpha: 0.3)
+                : AppColors.onPrimary.withValues(alpha: 0.3),
           ),
           // 右边：下拉菜单按钮
           PopupMenuButton<String>(
@@ -531,76 +356,6 @@ class ItemDetailPage extends ConsumerWidget {
         _showMarkConsumedDialog(context, ref);
         break;
     }
-  }
-
-  /// 构建操作按钮
-  Widget _buildActionButton({
-    required IconData icon,
-    required String label,
-    bool isDestructive = false,
-    VoidCallback? onPressed,  // 改为可空
-  }) {
-    final isEnabled = onPressed != null;
-    return Container(
-      width: 72,
-      height: 48,
-      decoration: BoxDecoration(
-        color: isDestructive
-            ? AppColors.errorContainer.withOpacity(0.3)
-            : AppColors.surfaceContainer,
-        borderRadius: AppRadius.medium,
-        border: Border.all(
-          color: isDestructive
-              ? AppColors.error.withOpacity(0.3)
-              : AppColors.outlineVariant.withOpacity(0.3),
-        ),
-      ),
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: AppRadius.medium,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 20,
-              color: isDestructive
-                  ? (isEnabled ? AppColors.error : AppColors.onSurfaceVariant)
-                  : (isEnabled ? AppColors.onSurface : AppColors.onSurfaceVariant),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: AppTypography.labelCaps.copyWith(
-                fontSize: 10,
-                color: isDestructive
-                    ? (isEnabled ? AppColors.error : AppColors.onSurfaceVariant)
-                    : (isEnabled ? AppColors.onSurface : AppColors.onSurfaceVariant),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Color _getStatusColor(ItemStatus status) {
-    switch (status) {
-      case ItemStatus.normal:
-        return AppColors.primary;
-      case ItemStatus.expiringSoon:
-        return AppColors.secondary;
-      case ItemStatus.urgent:
-        return AppColors.error;
-      case ItemStatus.expired:
-        return AppColors.error;
-      case ItemStatus.consumed:
-        return AppColors.primary;
-    }
-  }
-
-  String _formatDate(DateTime date) {
-    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
 
   void _handleMenuAction(BuildContext context, WidgetRef ref, String action) {
