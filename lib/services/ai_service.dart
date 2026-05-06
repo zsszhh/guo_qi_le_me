@@ -56,6 +56,17 @@ class ConnectionTestResult {
   });
 }
 
+/// 保质期分析结果
+class ShelfLifeAnalysis {
+  final String analysis;
+  final double confidence;
+
+  const ShelfLifeAnalysis({
+    required this.analysis,
+    required this.confidence,
+  });
+}
+
 /// AI服务
 class AIService {
   static final AIService _instance = AIService._internal();
@@ -181,6 +192,80 @@ class AIService {
     } catch (e) {
       throw _handleError(e);
     }
+  }
+
+  /// 分析物品保质期
+  Future<ShelfLifeAnalysis> analyzeShelfLife({
+    required AIConfig config,
+    required String name,
+    required String category,
+    String? subCategory,
+    required bool isOpened,
+    required int daysRemaining,
+  }) async {
+    final prompt = _getShelfLifePrompt(
+      name: name,
+      category: category,
+      subCategory: subCategory,
+      isOpened: isOpened,
+      daysRemaining: daysRemaining,
+    );
+
+    try {
+      final response = await _callTextAPI(
+        config: config,
+        prompt: prompt,
+      );
+
+      String? content;
+      if (response['choices'] != null) {
+        content = response['choices'][0]['message']['content'] as String?;
+      }
+
+      if (content == null) {
+        throw Exception('AI响应内容为空');
+      }
+
+      return ShelfLifeAnalysis(
+        analysis: content.trim(),
+        confidence: 0.85,
+      );
+    } catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  /// 保质期分析提示词
+  String _getShelfLifePrompt({
+    required String name,
+    required String category,
+    String? subCategory,
+    required bool isOpened,
+    required int daysRemaining,
+  }) {
+    final today = DateTime.now().toString().split(' ')[0];
+    final openStatus = isOpened ? '已开封' : '未开封';
+
+    return '''
+你是一个物品保质期分析专家。请根据以下信息，给出简短的保质期建议。
+
+【物品信息】
+- 名称：$name
+- 分类：$category${subCategory != null ? ' ($subCategory)' : ''}
+- 状态：$openStatus
+- 剩余天数：$daysRemaining 天
+
+【分析要求】
+1. 如果已开封，说明开封后的保质期变化
+2. 给出存储建议（温度、位置等）
+3. 提醒食用/使用优先级
+4. 字数控制在100字以内
+
+【返回格式】
+直接返回分析文本，不要添加标题或格式。
+
+今天日期：$today
+''';
   }
 
   /// 调用视觉API（统一使用OpenAI兼容格式）
