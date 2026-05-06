@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -14,6 +13,7 @@ import '../models/item.dart';
 import '../models/ai_config.dart';
 import '../services/ai_service.dart';
 import '../services/database_service.dart';
+import '../services/image_preprocessing_service.dart';
 import '../models/prefilled_data.dart';
 import 'item_edit_page.dart';
 
@@ -31,6 +31,7 @@ class _AIInputPageState extends ConsumerState<AIInputPage> {
   final ImagePicker _imagePicker = ImagePicker();
   final AIService _aiService = AIService();
   final DatabaseService _dbService = DatabaseService();
+  final ImagePreprocessingService _preprocessingService = ImagePreprocessingService();
 
   @override
   Widget build(BuildContext context) {
@@ -322,16 +323,20 @@ class _AIInputPageState extends ConsumerState<AIInputPage> {
       // 保存图片路径用于后续传递
       final selectedImagePath = image.path;
 
+      setState(() => _loadingText = '正在预处理图片...');
+
+      // 图片预处理
+      final preprocessed = await _preprocessingService.preprocess(File(selectedImagePath));
+      final originalBase64 = _preprocessingService.toBase64(preprocessed.original);
+      final enhancedBase64 = _preprocessingService.toBase64(preprocessed.enhanced);
+
       setState(() => _loadingText = 'AI 正在识别...');
 
-      // 读取图片并转Base64
-      final bytes = await File(selectedImagePath).readAsBytes();
-      final base64Image = base64Encode(bytes);
-
-      // 调用AI识别
-      final result = await _aiService.recognizeImage(
+      // 调用 Agent 工作流识别
+      final result = await _aiService.recognizeImageWithAgent(
         config: config,
-        base64Image: base64Image,
+        originalImageBase64: originalBase64,
+        enhancedImageBase64: enhancedBase64,
       );
 
       setState(() => _isLoading = false);
