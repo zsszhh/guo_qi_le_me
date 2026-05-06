@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import '../models/ai_config.dart';
 import '../models/item.dart';
 import '../services/database_service.dart';
 import '../services/notification_service.dart';
@@ -416,4 +417,10 @@ final itemStatsProvider = Provider<ItemStats>((ref) {
 final recentItemsProvider = FutureProvider<List<Item>>((ref) async {
   final dbService = ref.watch(databaseServiceProvider);
   return await dbService.getRecentItems(limit: 5);
+});
+
+/// 默认AI配置Provider
+final defaultAIConfigProvider = FutureProvider<AIConfig?>((ref) async {
+  final dbService = ref.watch(databaseServiceProvider);
+  return await dbService.getAIConfig();
 });
