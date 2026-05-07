@@ -386,6 +386,7 @@ class _VoiceRecordButtonState extends State<VoiceRecordButton>
   void _onRecordEnd(LongPressEndDetails details) async {
     try {
       await _speech.stop();
+      if (!mounted) return;
 
       // 检查是否取消
       final deltaY = details.localPosition.dy;
