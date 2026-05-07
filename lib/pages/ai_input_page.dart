@@ -2,12 +2,12 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../theme/colors.dart';
 import '../theme/typography.dart';
 import '../theme/spacing.dart';
 import '../widgets/photo_recognition_button.dart';
 import '../widgets/recent_items_list.dart';
+import '../widgets/voice_record_button.dart';
 import '../providers/item_provider.dart';
 import '../models/item.dart';
 import '../models/ai_config.dart';
@@ -141,65 +141,9 @@ class _AIInputPageState extends ConsumerState<AIInputPage> {
   /// 构建语音录入按钮
   Widget _buildVoiceButton() {
     return Center(
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 320),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: _isLoading ? null : () => _handleVoiceInput(),
-            borderRadius: BorderRadius.circular(AppRadius.full),
-            child: Container(
-              height: 64,
-              decoration: BoxDecoration(
-                color: AppColors.surfaceContainerHigh,
-                borderRadius: BorderRadius.circular(AppRadius.full),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.5),
-                  width: 1,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.mic,
-                      color: AppColors.primary,
-                      size: 24,
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          '语音录入',
-                          style: AppTypography.bodyBase.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.onSurface,
-                          ),
-                        ),
-                        Text(
-                          'Voice Input',
-                          style: AppTypography.bodySm.copyWith(
-                            color: AppColors.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
+      child: VoiceRecordButton(
+        disabled: _isLoading,
+        onRecordComplete: (text) => _handleVoiceRecordComplete(text),
       ),
     );
   }
@@ -373,72 +317,25 @@ class _AIInputPageState extends ConsumerState<AIInputPage> {
     }
   }
 
-  /// 语音录入
-  void _handleVoiceInput() async {
+  void _handleManualInput() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const ItemEditPage(),
+      ),
+    );
+  }
+
+  /// 处理语音录音完成
+  void _handleVoiceRecordComplete(String recognizedText) async {
     final config = await _checkAIConfig();
     if (config == null) return;
 
     setState(() {
       _isLoading = true;
-      _loadingText = '请说话...';
+      _loadingText = 'AI 正在解析...';
     });
 
     try {
-      final speech = stt.SpeechToText();
-      final available = await speech.initialize(
-        onError: (error) {
-          setState(() => _isLoading = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('语音初始化失败: ${error.errorMsg}')),
-          );
-        },
-        onStatus: (status) {
-          if (status == 'done' || status == 'notListening') {
-            speech.stop();
-          }
-        },
-      );
-
-      if (!available) {
-        setState(() => _isLoading = false);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('语音识别不可用')),
-          );
-        }
-        return;
-      }
-
-      String recognizedText = '';
-
-      await speech.listen(
-        onResult: (result) {
-          recognizedText = result.recognizedWords;
-          if (result.finalResult) {
-            speech.stop();
-          }
-        },
-        listenFor: const Duration(seconds: 10),
-        pauseFor: const Duration(seconds: 3),
-        // ignore: deprecated_member_use
-        partialResults: true,
-      );
-
-      // 等待语音识别完成
-      await Future.delayed(const Duration(seconds: 3));
-
-      if (recognizedText.isEmpty) {
-        setState(() => _isLoading = false);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('未识别到语音内容')),
-          );
-        }
-        return;
-      }
-
-      setState(() => _loadingText = 'AI 正在解析...');
-
       // 调用AI解析
       final parseResult = await _aiService.parseVoice(
         config: config,
@@ -472,17 +369,9 @@ class _AIInputPageState extends ConsumerState<AIInputPage> {
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('语音识别失败: $e')),
+          SnackBar(content: Text('语音解析失败: $e')),
         );
       }
     }
-  }
-
-  void _handleManualInput() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const ItemEditPage(),
-      ),
-    );
   }
 }
