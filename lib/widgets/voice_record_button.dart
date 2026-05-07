@@ -173,7 +173,7 @@ class _VoiceRecordButtonState extends State<VoiceRecordButton>
 
   Widget _buildRecordingButton() {
     return Container(
-      height: 80,
+      height: 88,
       constraints: const BoxConstraints(maxWidth: 320),
       decoration: BoxDecoration(
         color: AppColors.primary.withValues(alpha: 0.15),
@@ -251,7 +251,7 @@ class _VoiceRecordButtonState extends State<VoiceRecordButton>
 
   Widget _buildCancellingButton() {
     return Container(
-      height: 80,
+      height: 88,
       constraints: const BoxConstraints(maxWidth: 320),
       decoration: BoxDecoration(
         color: AppColors.error.withValues(alpha: 0.15),
