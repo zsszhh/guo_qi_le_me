@@ -27,7 +27,7 @@ class DatabaseService {
   static String get databaseName => _databaseName;
 
   /// 数据库版本
-  static const int _databaseVersion = 5;
+  static const int _databaseVersion = 6;
 
   /// 表名常量
   static const String tableItems = 'items';
@@ -75,6 +75,9 @@ class DatabaseService {
         purchase_date TEXT NOT NULL,
         expiry_date TEXT NOT NULL,
         opened_date TEXT,
+        suggested_use_date TEXT,
+        use_date_source TEXT,
+        is_individually_wrapped INTEGER DEFAULT 0,
         quantity INTEGER DEFAULT 1,
         unit TEXT DEFAULT '个',
         location TEXT,
@@ -282,6 +285,13 @@ class DatabaseService {
         )
       ''');
       await db.execute('CREATE INDEX IF NOT EXISTS idx_ai_analysis_cache_key ON $tableAIAnalysisCache (cache_key)');
+    }
+
+    // 版本5到版本6：添加开封保质期相关字段
+    if (oldVersion < 6) {
+      await db.execute('ALTER TABLE $tableItems ADD COLUMN suggested_use_date TEXT');
+      await db.execute('ALTER TABLE $tableItems ADD COLUMN use_date_source TEXT');
+      await db.execute('ALTER TABLE $tableItems ADD COLUMN is_individually_wrapped INTEGER DEFAULT 0');
     }
   }
 
