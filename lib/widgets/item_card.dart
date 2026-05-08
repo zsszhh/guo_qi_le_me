@@ -130,10 +130,9 @@ class ItemCard extends StatelessWidget {
                         StatusBadge(
                           status: effectiveStatus,
                           daysRemaining: daysRemaining,
-                          compact: true,
                         ),
                         if (_shouldShowOpenButton()) ...[
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 6),
                           _buildOpenIconButton(),
                         ],
                       ],
