@@ -12,6 +12,9 @@ class Item {
   final DateTime purchaseDate;
   final DateTime expiryDate;
   final DateTime? openedDate;
+  final DateTime? suggestedUseDate;     // 建议使用日期
+  final String? useDateSource;          // 建议日期来源：'rule' | 'ai' | 'fallback' | null
+  final bool isIndividuallyWrapped;     // 是否独立包装，默认 false
   final int quantity;
   final String unit;
   final String? location;
@@ -32,6 +35,9 @@ class Item {
     required this.purchaseDate,
     required this.expiryDate,
     this.openedDate,
+    this.suggestedUseDate,
+    this.useDateSource,
+    this.isIndividuallyWrapped = false,
     this.quantity = 1,
     this.unit = '个',
     this.location,
@@ -78,6 +84,11 @@ class Item {
       openedDate: json['opened_date'] != null
           ? parseDate(json['opened_date'] as String?, now, 'opened_date')
           : null,
+      suggestedUseDate: json['suggested_use_date'] != null
+          ? parseDate(json['suggested_use_date'] as String?, now, 'suggested_use_date')
+          : null,
+      useDateSource: json['use_date_source'] as String?,
+      isIndividuallyWrapped: json['is_individually_wrapped'] == 1,
       quantity: json['quantity'] as int? ?? 1,
       unit: json['unit'] as String? ?? '个',
       location: json['location'] as String?,
@@ -105,6 +116,9 @@ class Item {
       'purchase_date': purchaseDate.toIso8601String(),
       'expiry_date': expiryDate.toIso8601String(),
       'opened_date': openedDate?.toIso8601String(),
+      'suggested_use_date': suggestedUseDate?.toIso8601String(),
+      'use_date_source': useDateSource,
+      'is_individually_wrapped': isIndividuallyWrapped ? 1 : 0,
       'quantity': quantity,
       'unit': unit,
       'location': location,
@@ -128,6 +142,9 @@ class Item {
     DateTime? purchaseDate,
     DateTime? expiryDate,
     DateTime? openedDate,
+    DateTime? suggestedUseDate,
+    String? useDateSource,
+    bool? isIndividuallyWrapped,
     int? quantity,
     String? unit,
     String? location,
@@ -148,6 +165,9 @@ class Item {
       purchaseDate: purchaseDate ?? this.purchaseDate,
       expiryDate: expiryDate ?? this.expiryDate,
       openedDate: openedDate ?? this.openedDate,
+      suggestedUseDate: suggestedUseDate ?? this.suggestedUseDate,
+      useDateSource: useDateSource ?? this.useDateSource,
+      isIndividuallyWrapped: isIndividuallyWrapped ?? this.isIndividuallyWrapped,
       quantity: quantity ?? this.quantity,
       unit: unit ?? this.unit,
       location: location ?? this.location,
