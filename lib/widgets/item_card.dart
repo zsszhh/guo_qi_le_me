@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../theme/colors.dart';
 import '../theme/typography.dart';
@@ -93,8 +94,8 @@ class ItemCard extends StatelessWidget {
                     ClipRRect(
                       borderRadius: AppRadius.medium,
                       child: hasImage
-                          ? Image.network(
-                              imageUrl!,
+                          ? Image.file(
+                              File(imageUrl!),
                               width: 44,
                               height: 44,
                               fit: BoxFit.cover,

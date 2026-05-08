@@ -12,7 +12,7 @@ class ExpiryProgressBar extends StatelessWidget {
     super.key,
     required this.purchaseDate,
     required this.expiryDate,
-    this.height = 3,
+    this.height = 4,
   });
 
   @override
