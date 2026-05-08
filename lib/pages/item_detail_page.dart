@@ -11,6 +11,7 @@ import '../widgets/hero_image_section.dart';
 import '../widgets/lifecycle_timeline.dart';
 import '../widgets/ai_analysis_card.dart';
 import '../widgets/consume_bottom_sheet.dart';
+import '../data/expiry_rules.dart';
 import 'item_edit_page.dart';
 
 /// 物品详情页
@@ -78,6 +79,13 @@ class ItemDetailPage extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
+
+              // 建议使用日期
+              if (item.suggestedUseDate != null)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.containerMargin),
+                  child: _buildSuggestedDateCard(item),
+                ),
 
               // AI保质期分析
               Padding(
@@ -174,6 +182,90 @@ class ItemDetailPage extends ConsumerWidget {
               ),
             ],
           ),
+        ],
+      ),
+    );
+  }
+
+  /// 构建建议使用日期卡片
+  Widget _buildSuggestedDateCard(Item item) {
+    final suggestedDate = item.suggestedUseDate!;
+    final days = suggestedDate.difference(DateTime.now()).inDays;
+    final source = item.useDateSource ?? 'rule';
+
+    Color bgColor;
+    Color textColor;
+    IconData icon;
+    String statusText;
+
+    if (days > 3) {
+      bgColor = AppColors.primaryContainer;
+      textColor = AppColors.onPrimaryContainer;
+      icon = Icons.event_available_rounded;
+      statusText = '建议使用日期';
+    } else if (days > 0) {
+      bgColor = Colors.orange.withValues(alpha: 0.15);
+      textColor = Colors.orange;
+      icon = Icons.warning_amber_rounded;
+      statusText = '即将到期';
+    } else {
+      bgColor = Colors.red.withValues(alpha: 0.15);
+      textColor = Colors.red;
+      icon = Icons.error_outline;
+      statusText = '已超过建议日期';
+    }
+
+    final rule = ExpiryRules.findRule(item.category, item.subCategory);
+    final storageTip = rule?.storageTip;
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: AppRadius.medium,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: textColor, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                statusText,
+                style: AppTypography.bodyBase.copyWith(
+                  color: textColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '${suggestedDate.month}月${suggestedDate.day}日 前建议使用完毕',
+            style: AppTypography.bodySm.copyWith(
+              color: textColor,
+            ),
+          ),
+          if (storageTip != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              '存储建议：$storageTip',
+              style: AppTypography.bodySm.copyWith(
+                color: textColor.withValues(alpha: 0.8),
+              ),
+            ),
+          ],
+          if (source == 'ai') ...[
+            const SizedBox(height: 4),
+            Text(
+              '（AI 智能分析）',
+              style: AppTypography.bodySm.copyWith(
+                color: textColor.withValues(alpha: 0.6),
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
         ],
       ),
     );
