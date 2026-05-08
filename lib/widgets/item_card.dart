@@ -5,6 +5,7 @@ import '../theme/spacing.dart';
 import '../utils/constants.dart';
 import '../utils/status_utils.dart';
 import '../utils/date_utils.dart' as app_utils;
+import 'status_badge.dart';
 import 'expiry_progress_bar.dart';
 
 /// 物品卡片组件
@@ -49,6 +50,7 @@ class ItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final effectiveStatus = status ?? StatusUtils.calculateStatus(expiryDate);
+    final daysRemaining = app_utils.DateUtils.daysRemaining(expiryDate);
     final categoryIcon = PresetCategories.getIcon(category);
 
     return Material(
@@ -80,7 +82,7 @@ class ItemCard extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(
                   AppSpacing.md,
                   AppSpacing.md,
-                  AppSpacing.sm,
+                  AppSpacing.md,
                   AppSpacing.sm,
                 ),
                 child: Row(
@@ -105,30 +107,14 @@ class ItemCard extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // 名称行
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  name,
-                                  style: AppTypography.bodyBase.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              // 状态指示点
-                              Container(
-                                width: 8,
-                                height: 8,
-                                margin: const EdgeInsets.only(left: 6),
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: _getStatusColor(effectiveStatus),
-                                ),
-                              ),
-                            ],
+                          // 名称
+                          Text(
+                            name,
+                            style: AppTypography.bodyBase.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 2),
                           // 副标题
@@ -136,11 +122,22 @@ class ItemCard extends StatelessWidget {
                         ],
                       ),
                     ),
-                    // 右侧操作区
-                    if (_shouldShowOpenButton())
-                      _buildOpenIconButton()
-                    else
-                      const SizedBox(width: AppSpacing.sm),
+                    const SizedBox(width: AppSpacing.sm),
+                    // 右侧区域：状态徽章 + 开封按钮
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        StatusBadge(
+                          status: effectiveStatus,
+                          daysRemaining: daysRemaining,
+                          compact: true,
+                        ),
+                        if (_shouldShowOpenButton()) ...[
+                          const SizedBox(height: 4),
+                          _buildOpenIconButton(),
+                        ],
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -163,21 +160,6 @@ class ItemCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  Color _getStatusColor(ItemStatus status) {
-    switch (status) {
-      case ItemStatus.normal:
-        return Colors.green;
-      case ItemStatus.expiringSoon:
-        return Colors.orange;
-      case ItemStatus.urgent:
-        return Colors.red;
-      case ItemStatus.expired:
-        return Colors.grey;
-      case ItemStatus.consumed:
-        return Colors.blue;
-    }
   }
 
   bool _shouldShowOpenButton() {
@@ -224,15 +206,15 @@ class ItemCard extends StatelessWidget {
     return GestureDetector(
       onTap: onOpenTap,
       child: Container(
-        width: 36,
-        height: 36,
+        width: 32,
+        height: 32,
         decoration: BoxDecoration(
           color: AppColors.primary.withValues(alpha: 0.1),
           shape: BoxShape.circle,
         ),
         child: Icon(
           Icons.open_in_new_rounded,
-          size: 18,
+          size: 16,
           color: AppColors.primary,
         ),
       ),
