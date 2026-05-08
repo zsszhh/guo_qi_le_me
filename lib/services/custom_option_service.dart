@@ -165,7 +165,7 @@ class CustomOptionService {
   List<String> _getDefaultSubCategories(String? category) {
     switch (category) {
       case PresetCategories.food:
-        return ['生鲜食品', '包装食品', '调味品', '饮料', '乳制品', '冷冻食品', '零食', '粮油米面'];
+        return ['生鲜食品', '包装食品', '调味品', '饮料', '乳制品', '冷冻食品', '零食', '粮油米面', '独立包装牛奶', '独立小包零食'];
       case PresetCategories.drug:
         return ['处方药', '非处方药', '保健品', '医疗器械', '维生素', '外用药', '中药'];
       case PresetCategories.cosmetic:
