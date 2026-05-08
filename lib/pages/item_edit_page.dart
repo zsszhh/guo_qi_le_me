@@ -48,6 +48,7 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
   final bool _isLoading = false;
   String? _imageUrl;
   File? _selectedImage;
+  bool _isIndividuallyWrapped = false;
 
   final ProductImageService _productImageService = ProductImageService();
   bool _showSimilarItemsHint = false;
@@ -103,6 +104,7 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
       _location = item.location;
       _unit = item.unit;
       _imageUrl = item.imageUrl;
+      _isIndividuallyWrapped = item.isIndividuallyWrapped;
     }
   }
 
@@ -352,6 +354,23 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
                 ],
               ),
               onTap: () => _selectDate(isOpenedDate: true),
+            ),
+            const Divider(),
+
+            // 独立包装选项
+            ListTile(
+              leading: const Icon(Icons.inventory_2_outlined),
+              title: const Text('独立包装'),
+              subtitle: const Text('独立包装物品无需记录开封后保质期'),
+              trailing: Switch(
+                value: _isIndividuallyWrapped,
+                onChanged: (value) {
+                  setState(() {
+                    _isIndividuallyWrapped = value;
+                  });
+                },
+              ),
+              contentPadding: EdgeInsets.zero,
             ),
             const SizedBox(height: AppSpacing.lg),
 
@@ -811,6 +830,7 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
           notes: _notesController.text.trim().isEmpty
               ? null : _notesController.text.trim(),
           imageUrl: _imageUrl,
+          isIndividuallyWrapped: _isIndividuallyWrapped,
           status: ItemStatus.normal,
           createdAt: _isEditing ? DateTime.now() : DateTime.now(),
           updatedAt: DateTime.now(),
