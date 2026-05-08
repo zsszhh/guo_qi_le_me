@@ -7,6 +7,7 @@ import '../services/webdav_service.dart';
 import '../theme/colors.dart';
 import '../theme/typography.dart';
 import '../theme/spacing.dart';
+import '../widgets/message_toast.dart';
 
 /// WebDAV配置状态
 class WebDAVConfigState {
@@ -560,12 +561,11 @@ class _WebDAVConfigPageState extends ConsumerState<WebDAVConfigPage> {
     setState(() => _isTesting = false);
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result.success ? '连接成功！' : '连接失败: ${result.errorMessage ?? "请检查配置"}'),
-          backgroundColor: result.success ? AppColors.primary : AppColors.error,
-        ),
-      );
+      if (result.success) {
+        MessageService.success(context, '连接成功！');
+      } else {
+        MessageService.error(context, '连接失败: ${result.errorMessage ?? "请检查配置"}');
+      }
     }
   }
 
@@ -577,9 +577,7 @@ class _WebDAVConfigPageState extends ConsumerState<WebDAVConfigPage> {
     if (mounted) {
       final state = ref.read(webdavConfigProvider);
       if (state.syncStatus != SyncStatus.error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('同步成功！')),
-        );
+        MessageService.success(context, '同步成功！');
       }
     }
   }
@@ -603,9 +601,7 @@ class _WebDAVConfigPageState extends ConsumerState<WebDAVConfigPage> {
     await ref.read(webdavConfigProvider.notifier).saveConfig(config);
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('配置已保存')),
-      );
+      MessageService.success(context, '配置已保存');
       Navigator.of(context).pop();
     }
   }
@@ -618,9 +614,7 @@ class _WebDAVConfigPageState extends ConsumerState<WebDAVConfigPage> {
     if (mounted) {
       final state = ref.read(webdavConfigProvider);
       if (state.syncStatus != SyncStatus.error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('备份成功（含图片）！')),
-        );
+        MessageService.success(context, '备份成功（含图片）！');
       }
     }
   }
@@ -710,9 +704,7 @@ class _WebDAVConfigPageState extends ConsumerState<WebDAVConfigPage> {
     } catch (e) {
       setState(() => _isSyncing = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('获取备份列表失败: $e')),
-        );
+        MessageService.error(context, '获取备份列表失败: $e');
       }
     }
   }
@@ -747,15 +739,11 @@ class _WebDAVConfigPageState extends ConsumerState<WebDAVConfigPage> {
       await ref.read(webdavConfigProvider.notifier).restoreBackup(dbPath, imagesPath);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('恢复成功！请重启应用')),
-        );
+        MessageService.success(context, '恢复成功！请重启应用');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('恢复失败: $e')),
-        );
+        MessageService.error(context, '恢复失败: $e');
       }
     } finally {
       setState(() => _isSyncing = false);

@@ -8,6 +8,7 @@ import '../theme/spacing.dart';
 import '../widgets/photo_recognition_button.dart';
 import '../widgets/recent_items_list.dart';
 import '../widgets/voice_record_button.dart';
+import '../widgets/message_toast.dart';
 import '../providers/item_provider.dart';
 import '../models/item.dart';
 import '../models/ai_config.dart';
@@ -16,6 +17,7 @@ import '../services/database_service.dart';
 import '../services/image_preprocessing_service.dart';
 import '../models/prefilled_data.dart';
 import 'item_edit_page.dart';
+import 'dart:math' as math;
 
 /// AI智能录入页面
 class AIInputPage extends ConsumerStatefulWidget {
@@ -25,13 +27,37 @@ class AIInputPage extends ConsumerStatefulWidget {
   ConsumerState<AIInputPage> createState() => _AIInputPageState();
 }
 
-class _AIInputPageState extends ConsumerState<AIInputPage> {
+class _AIInputPageState extends ConsumerState<AIInputPage>
+    with SingleTickerProviderStateMixin {
   bool _isLoading = false;
   String _loadingText = 'AI 正在识别...';
+  String _loadingSubtext = '';
+  double _loadingProgress = 0.0;
   final ImagePicker _imagePicker = ImagePicker();
   final AIService _aiService = AIService();
   final DatabaseService _dbService = DatabaseService();
   final ImagePreprocessingService _preprocessingService = ImagePreprocessingService();
+
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    )..repeat();
+    _pulseAnimation = Tween<double>(begin: 0.8, end: 1.2).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,6 +76,7 @@ class _AIInputPageState extends ConsumerState<AIInputPage> {
         elevation: 0,
       ),
       body: Stack(
+        fit: StackFit.expand,
         children: [
           SingleChildScrollView(
             padding: const EdgeInsets.all(AppSpacing.lg),
@@ -84,36 +111,139 @@ class _AIInputPageState extends ConsumerState<AIInputPage> {
             ),
           ),
 
-          // 加载指示器
+          // 加载指示器 - 全屏遮罩
           if (_isLoading)
             Positioned.fill(
               child: Container(
-                color: Colors.black.withValues(alpha: 0.3),
+                color: Colors.black.withValues(alpha: 0.6),
                 child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.all(AppSpacing.lg),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const CircularProgressIndicator(),
-                        const SizedBox(height: AppSpacing.md),
-                        Text(
-                          _loadingText,
-                          style: AppTypography.bodyBase,
-                        ),
-                      ],
-                    ),
-                  ),
+                  child: _buildModernLoadingIndicator(),
                 ),
               ),
             ),
         ],
       ),
     );
+  }
+
+  /// 构建现代风格的加载指示器
+  Widget _buildModernLoadingIndicator() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.2),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 动态脉冲圆环
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              // 外圈脉冲
+              AnimatedBuilder(
+                animation: _pulseAnimation,
+                builder: (context, child) {
+                  return Container(
+                    width: 80 * _pulseAnimation.value,
+                    height: 80 * _pulseAnimation.value,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: AppColors.primary.withValues(alpha: 0.3),
+                        width: 2,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              // 中圈
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: AppColors.primary.withValues(alpha: 0.5),
+                    width: 2,
+                  ),
+                ),
+              ),
+              // 内圈旋转
+              TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.0, end: 1.0),
+                duration: const Duration(seconds: 2),
+                builder: (context, value, child) {
+                  return Transform.rotate(
+                    angle: value * 2 * math.pi,
+                    child: CustomPaint(
+                      size: const Size(48, 48),
+                      painter: _ArcPainter(
+                        color: AppColors.primary,
+                        strokeWidth: 3,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              // 中心图标
+              Icon(
+                _getLoadingIcon(),
+                size: 24,
+                color: AppColors.primary,
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          // 主文字
+          Text(
+            _loadingText,
+            style: AppTypography.titleLg.copyWith(
+              color: AppColors.onSurface,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          if (_loadingSubtext.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              _loadingSubtext,
+              style: AppTypography.bodySm.copyWith(
+                color: AppColors.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+          const SizedBox(height: AppSpacing.md),
+          // 进度条
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: _loadingProgress > 0 ? _loadingProgress : null,
+              backgroundColor: AppColors.surfaceVariant,
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+              minHeight: 4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 根据加载状态获取图标
+  IconData _getLoadingIcon() {
+    if (_loadingText.contains('图片')) return Icons.image;
+    if (_loadingText.contains('预处理')) return Icons.auto_fix_high;
+    if (_loadingText.contains('识别') || _loadingText.contains('AI')) return Icons.psychology;
+    return Icons.hourglass_top;
   }
 
   /// 构建标题区域
@@ -199,17 +329,11 @@ class _AIInputPageState extends ConsumerState<AIInputPage> {
     final config = await _dbService.getAIConfig();
     if (config == null) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('请先配置AI服务'),
-            action: SnackBarAction(
-              label: '去配置',
-              onPressed: () {
-                Navigator.of(context).pushNamed('/ai-config');
-              },
-            ),
-          ),
-        );
+        MessageService.warning(context, '请先配置AI服务');
+        // 跳转到AI配置页
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted) Navigator.of(context).pushNamed('/ai-config');
+        });
       }
       return null;
     }
@@ -222,6 +346,7 @@ class _AIInputPageState extends ConsumerState<AIInputPage> {
     if (config == null) return;
 
     // 选择图片来源
+    if (!mounted) return;
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
       builder: (context) => SafeArea(
@@ -248,6 +373,8 @@ class _AIInputPageState extends ConsumerState<AIInputPage> {
     setState(() {
       _isLoading = true;
       _loadingText = '正在获取图片...';
+      _loadingSubtext = '请稍候';
+      _loadingProgress = 0.1;
     });
 
     try {
@@ -267,14 +394,22 @@ class _AIInputPageState extends ConsumerState<AIInputPage> {
       // 保存图片路径用于后续传递
       final selectedImagePath = image.path;
 
-      setState(() => _loadingText = '正在预处理图片...');
+      setState(() {
+        _loadingText = '正在预处理图片...';
+        _loadingSubtext = '优化图片质量';
+        _loadingProgress = 0.3;
+      });
 
       // 图片预处理
       final preprocessed = await _preprocessingService.preprocess(File(selectedImagePath));
       final originalBase64 = _preprocessingService.toBase64(preprocessed.original);
       final enhancedBase64 = _preprocessingService.toBase64(preprocessed.enhanced);
 
-      setState(() => _loadingText = 'AI 正在识别...');
+      setState(() {
+        _loadingText = 'AI 正在识别...';
+        _loadingSubtext = '分析物品信息';
+        _loadingProgress = 0.6;
+      });
 
       // 调用 Agent 工作流识别
       final result = await _aiService.recognizeImageWithAgent(
@@ -283,7 +418,9 @@ class _AIInputPageState extends ConsumerState<AIInputPage> {
         enhancedImageBase64: enhancedBase64,
       );
 
-      setState(() => _isLoading = false);
+      setState(() {
+        _loadingProgress = 1.0;
+      });
 
       // 跳转到预填充表单页面
       if (mounted) {
@@ -308,11 +445,12 @@ class _AIInputPageState extends ConsumerState<AIInputPage> {
         );
       }
     } catch (e) {
-      setState(() => _isLoading = false);
+      setState(() {
+        _isLoading = false;
+        _loadingProgress = 0;
+      });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('识别失败: $e')),
-        );
+        MessageService.error(context, '识别失败: $e');
       }
     }
   }
@@ -333,16 +471,26 @@ class _AIInputPageState extends ConsumerState<AIInputPage> {
     setState(() {
       _isLoading = true;
       _loadingText = 'AI 正在解析...';
+      _loadingSubtext = '理解语音内容';
+      _loadingProgress = 0.3;
     });
 
     try {
       // 调用AI解析
+      setState(() {
+        _loadingText = 'AI 正在解析...';
+        _loadingSubtext = '理解语音内容';
+        _loadingProgress = 0.6;
+      });
+
       final parseResult = await _aiService.parseVoice(
         config: config,
         text: recognizedText,
       );
 
-      setState(() => _isLoading = false);
+      setState(() {
+        _loadingProgress = 1.0;
+      });
 
       // 跳转到预填充表单页面
       if (mounted) {
@@ -366,12 +514,44 @@ class _AIInputPageState extends ConsumerState<AIInputPage> {
         );
       }
     } catch (e) {
-      setState(() => _isLoading = false);
+      setState(() {
+        _isLoading = false;
+        _loadingProgress = 0;
+      });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('语音解析失败: $e')),
-        );
+        MessageService.error(context, '语音解析失败: $e');
       }
     }
+  }
+}
+
+/// 绘制圆弧的画笔
+class _ArcPainter extends CustomPainter {
+  final Color color;
+  final double strokeWidth;
+
+  _ArcPainter({required this.color, required this.strokeWidth});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final rect = Rect.fromLTWH(
+      strokeWidth / 2,
+      strokeWidth / 2,
+      size.width - strokeWidth,
+      size.height - strokeWidth,
+    );
+
+    canvas.drawArc(rect, -math.pi / 2, math.pi * 1.5, false, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _ArcPainter oldDelegate) {
+    return color != oldDelegate.color || strokeWidth != oldDelegate.strokeWidth;
   }
 }

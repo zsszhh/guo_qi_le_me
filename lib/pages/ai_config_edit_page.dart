@@ -7,6 +7,7 @@ import '../theme/colors.dart';
 import '../theme/typography.dart';
 import '../theme/spacing.dart';
 import '../utils/constants.dart';
+import '../widgets/message_toast.dart';
 
 /// AI配置编辑页面
 /// 支持新增和编辑两种模式：config 为 null 表示新增，否则为编辑
@@ -32,7 +33,6 @@ class _AIConfigEditPageState extends ConsumerState<AIConfigEditPage> {
   late String _selectedModel;
   late bool _enabled;
   bool _isTesting = false;
-  bool _initialized = false;
 
   /// 是否为编辑模式
   bool get _isEditing => widget.config != null;
@@ -44,26 +44,18 @@ class _AIConfigEditPageState extends ConsumerState<AIConfigEditPage> {
     _selectedProvider = AIProvider.doubao;
     _selectedModel = 'doubao-1.5-vision-pro';
     _enabled = true;
+
+    // 编辑模式下异步加载配置
+    if (_isEditing && widget.config != null) {
+      _loadConfigAsync();
+    }
   }
 
-  @override
-  void dispose() {
-    _apiKeyController.dispose();
-    _timeoutController.dispose();
-    _baseUrlController.dispose();
-    _displayNameController.dispose();
-    _customModelController.dispose();
-    super.dispose();
-  }
-
-  /// 用已有配置填充表单（仅执行一次）
-  void _populateForm(AIConfig config) {
-    if (_initialized) return;
-    _initialized = true;
-
+  /// 异步加载配置（编辑模式）
+  Future<void> _loadConfigAsync() async {
+    final config = widget.config!;
     _selectedProvider = config.provider;
     _selectedModel = config.defaultModel;
-    _apiKeyController.text = config.apiKey;
     _timeoutController.text = config.timeoutSeconds.toString();
     _enabled = config.enabled;
 
@@ -76,19 +68,27 @@ class _AIConfigEditPageState extends ConsumerState<AIConfigEditPage> {
     if (config.provider == AIProvider.custom) {
       _customModelController.text = config.defaultModel;
     }
+
+    // 从 SecureStorage 读取 apiKey
+    final secureStorage = SecureStorageService();
+    final savedApiKey = await secureStorage.getApiKey(config.id);
+    _apiKeyController.text = savedApiKey ?? '';
+
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _apiKeyController.dispose();
+    _timeoutController.dispose();
+    _baseUrlController.dispose();
+    _displayNameController.dispose();
+    _customModelController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // 编辑模式：从已加载的配置列表中匹配当前配置（获取最新状态）
-    if (_isEditing) {
-      final listState = ref.watch(aiConfigListProvider);
-      final latestConfig = listState.configs.where((c) => c.id == widget.config!.id).firstOrNull;
-      if (latestConfig != null) {
-        _populateForm(latestConfig);
-      }
-    }
-
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
@@ -407,23 +407,15 @@ class _AIConfigEditPageState extends ConsumerState<AIConfigEditPage> {
       final result = await ref.read(aiConfigListProvider.notifier).testConnection(config);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              result.success ? '连接成功！' : '连接失败: ${result.errorMessage ?? "请检查配置"}',
-            ),
-            backgroundColor: result.success ? AppColors.primary : AppColors.error,
-          ),
-        );
+        if (result.success) {
+          MessageService.success(context, '连接成功！');
+        } else {
+          MessageService.error(context, '连接失败: ${result.errorMessage ?? "请检查配置"}');
+        }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('测试出错: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        MessageService.error(context, '测试出错: $e');
       }
     } finally {
       if (mounted) {
@@ -447,19 +439,12 @@ class _AIConfigEditPageState extends ConsumerState<AIConfigEditPage> {
       await secureStorage.saveApiKey(config.id, config.apiKey);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('配置已保存')),
-        );
+        MessageService.success(context, '配置已保存');
         Navigator.of(context).pop();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('保存失败: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        MessageService.error(context, '保存失败: $e');
       }
     }
   }

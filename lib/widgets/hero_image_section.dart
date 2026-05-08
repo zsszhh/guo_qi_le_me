@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import '../models/item.dart';
 import '../theme/colors.dart';
@@ -43,9 +45,9 @@ class HeroImageSection extends StatelessWidget {
               // 图片或图标
               ClipRRect(
                 borderRadius: BorderRadius.circular(AppRadius.xl),
-                child: item.imageUrl != null
-                    ? Image.network(
-                        item.imageUrl!,
+                child: item.imageUrl != null && item.imageUrl!.isNotEmpty
+                    ? Image.file(
+                        File(item.imageUrl!),
                         fit: BoxFit.cover,
                         width: double.infinity,
                         height: double.infinity,

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/colors.dart';
@@ -9,6 +10,7 @@ import '../models/item.dart';
 import '../utils/constants.dart';
 import '../utils/date_utils.dart' as app_utils;
 import '../widgets/consume_bottom_sheet.dart';
+import '../widgets/message_toast.dart';
 import 'item_detail_page.dart';
 
 /// 提醒中心页面
@@ -387,11 +389,11 @@ class ReminderCenterPage extends ConsumerWidget {
                       color: AppColors.surfaceContainer,
                       borderRadius: AppRadius.medium,
                     ),
-                    child: item.imageUrl != null
+                    child: item.imageUrl != null && item.imageUrl!.isNotEmpty
                         ? ClipRRect(
                             borderRadius: AppRadius.medium,
-                            child: Image.network(
-                              item.imageUrl!,
+                            child: Image.file(
+                              File(item.imageUrl!),
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) => _buildCategoryIcon(item),
                             ),
@@ -590,13 +592,11 @@ class ReminderCenterPage extends ConsumerWidget {
 
     final newQuantity = item.quantity - 1;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(newQuantity <= 0
-            ? '已使用完毕'
-            : '消耗成功，剩余 $newQuantity ${item.unit}'),
-        duration: const Duration(seconds: 2),
-      ),
+    MessageService.success(
+      context,
+      newQuantity <= 0
+          ? '已使用完毕'
+          : '消耗成功，剩余 $newQuantity ${item.unit}',
     );
   }
 
@@ -614,13 +614,11 @@ class ReminderCenterPage extends ConsumerWidget {
 
         final newQuantity = item.quantity - quantity;
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(newQuantity <= 0
-                ? '已使用完毕'
-                : '消耗成功，剩余 $newQuantity ${item.unit}'),
-            duration: const Duration(seconds: 2),
-          ),
+        MessageService.success(
+          context,
+          newQuantity <= 0
+              ? '已使用完毕'
+              : '消耗成功，剩余 $newQuantity ${item.unit}',
         );
       },
     );

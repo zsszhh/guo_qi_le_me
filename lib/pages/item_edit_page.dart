@@ -15,6 +15,7 @@ import '../models/item.dart';
 import '../models/custom_option.dart';
 import '../models/prefilled_data.dart';
 import '../widgets/editable_dropdown.dart';
+import '../widgets/message_toast.dart';
 import '../services/product_image_service.dart';
 
 /// 物品编辑页面
@@ -798,9 +799,7 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('选择图片失败: $e')),
-        );
+        MessageService.error(context, '选择图片失败: $e');
       }
     }
   }
@@ -859,15 +858,11 @@ class _ItemEditPageState extends ConsumerState<ItemEditPage> {
         if (mounted) {
           // 返回到主页（弹出所有路由直到首页）
           Navigator.of(context).popUntil((route) => route.isFirst);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(_isEditing ? '物品已更新' : '物品已添加')),
-          );
+          MessageService.success(context, _isEditing ? '物品已更新' : '物品已添加');
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('保存失败: $e')),
-          );
+          MessageService.error(context, '保存失败: $e');
         }
       } finally {
         if (mounted) {

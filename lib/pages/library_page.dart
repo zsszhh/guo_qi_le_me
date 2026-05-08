@@ -7,6 +7,7 @@ import '../theme/typography.dart';
 import '../theme/spacing.dart';
 import '../utils/constants.dart';
 import '../widgets/item_card.dart';
+import '../widgets/message_toast.dart';
 import 'item_edit_page.dart';
 import 'item_detail_page.dart';
 
@@ -276,12 +277,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
     await ref.read(itemsProvider.notifier).markAsOpened(itemId, aiConfig: aiConfig);
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('已标记为开封'),
-          duration: Duration(seconds: 2),
-        ),
-      );
+      MessageService.success(context, '已标记为开封');
     }
   }
 

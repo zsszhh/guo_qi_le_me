@@ -5,6 +5,7 @@ import '../theme/colors.dart';
 import '../theme/typography.dart';
 import '../theme/spacing.dart';
 import '../services/backup_service.dart';
+import '../widgets/message_toast.dart';
 import 'ai_config_list_page.dart';
 import 'webdav_config_page.dart';
 import 'reminder_config_page.dart';
@@ -301,15 +302,11 @@ class SettingsPage extends StatelessWidget {
                 try {
                   final history = await backupService.createLocalBackup();
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('备份成功: ${history.filePath}')),
-                    );
+                    MessageService.success(context, '备份成功: ${history.filePath}');
                   }
                 } catch (e) {
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('备份失败: $e')),
-                    );
+                    MessageService.error(context, '备份失败: $e');
                   }
                 }
               },
@@ -323,9 +320,7 @@ class SettingsPage extends StatelessWidget {
                 final backups = await backupService.getLocalBackups();
                 if (context.mounted) {
                   if (backups.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('没有可用的备份')),
-                    );
+                    MessageService.warning(context, '没有可用的备份');
                     return;
                   }
                   showModalBottomSheet(
@@ -358,15 +353,11 @@ class SettingsPage extends StatelessWidget {
                                 imagesBackupPath: imagesBackupPath,
                               );
                               if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('恢复成功，请重启应用')),
-                                );
+                                MessageService.success(context, '恢复成功，请重启应用');
                               }
                             } catch (e) {
                               if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('恢复失败: $e')),
-                                );
+                                MessageService.error(context, '恢复失败: $e');
                               }
                             }
                           },

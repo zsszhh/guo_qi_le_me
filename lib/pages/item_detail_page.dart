@@ -11,6 +11,7 @@ import '../widgets/hero_image_section.dart';
 import '../widgets/lifecycle_timeline.dart';
 import '../widgets/ai_analysis_card.dart';
 import '../widgets/consume_bottom_sheet.dart';
+import '../widgets/message_toast.dart';
 import '../data/expiry_rules.dart';
 import 'item_edit_page.dart';
 
@@ -511,14 +512,10 @@ class ItemDetailPage extends ConsumerWidget {
     if (newQuantity <= 0) {
       // 已消耗完毕，返回上一页
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('已使用完毕')),
-      );
+      MessageService.info(context, '已使用完毕');
     } else {
       // 显示剩余数量
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('消耗成功，剩余 $newQuantity ${item.unit}')),
-      );
+      MessageService.success(context, '消耗成功，剩余 $newQuantity ${item.unit}');
     }
   }
 
@@ -535,13 +532,9 @@ class ItemDetailPage extends ConsumerWidget {
         if (newQuantity <= 0) {
           // 已消耗完毕，返回上一页
           Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('已使用完毕')),
-          );
+          MessageService.info(context, '已使用完毕');
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('消耗成功，剩余 $newQuantity ${item.unit}')),
-          );
+          MessageService.success(context, '消耗成功，剩余 $newQuantity ${item.unit}');
         }
       },
     );
@@ -564,9 +557,7 @@ class ItemDetailPage extends ConsumerWidget {
               ref.read(itemsProvider.notifier).markAsConsumed(itemId);
               Navigator.pop(context);
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('已标记为使用完毕')),
-              );
+              MessageService.success(context, '已标记为使用完毕');
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
@@ -595,9 +586,7 @@ class ItemDetailPage extends ConsumerWidget {
               ref.read(itemsProvider.notifier).deleteItem(itemId);
               Navigator.pop(context); // 关闭对话框
               Navigator.pop(context); // 返回上一页
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('物品已删除')),
-              );
+              MessageService.info(context, '物品已删除');
             },
             child: const Text('删除', style: TextStyle(color: AppColors.error)),
           ),

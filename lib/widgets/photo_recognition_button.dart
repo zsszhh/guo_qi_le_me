@@ -50,24 +50,18 @@ class PhotoRecognitionButton extends StatelessWidget {
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                if (isLoading)
-                  const SizedBox(
-                    width: 64,
-                    height: 64,
-                    child: CircularProgressIndicator(
-                      color: AppColors.onPrimaryContainer,
-                      strokeWidth: 3,
-                    ),
-                  )
-                else
-                  const Icon(
+                // 加载时显示半透明状态，不显示内部动画
+                Opacity(
+                  opacity: isLoading ? 0.5 : 1.0,
+                  child: const Icon(
                     Icons.photo_camera,
                     size: 64,
                     color: AppColors.onPrimaryContainer,
                   ),
+                ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
-                  '拍照识别',
+                  isLoading ? '处理中...' : '拍照识别',
                   style: AppTypography.titleLg.copyWith(
                     color: AppColors.onPrimaryContainer,
                   ),

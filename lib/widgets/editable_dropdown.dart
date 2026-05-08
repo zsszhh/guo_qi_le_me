@@ -4,6 +4,7 @@ import '../theme/typography.dart';
 import '../theme/spacing.dart';
 import '../models/custom_option.dart';
 import '../services/custom_option_service.dart';
+import 'message_toast.dart';
 
 /// 可编辑下拉选择器
 class EditableDropdown extends StatefulWidget {
@@ -86,9 +87,7 @@ class _EditableDropdownState extends State<EditableDropdown> {
     // 检查是否已存在
     if (_options.contains(value)) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('"$value" 已存在')),
-        );
+        MessageService.warning(context, '"$value" 已存在');
       }
       return;
     }
@@ -126,9 +125,7 @@ class _EditableDropdownState extends State<EditableDropdown> {
     await _loadOptions();
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('已删除 "$optionValue"')),
-      );
+      MessageService.info(context, '已删除 "$optionValue"');
     }
   }
 

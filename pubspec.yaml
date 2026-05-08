@@ -2,7 +2,7 @@ name: guo_qi_le_me
 description: "过期了么 - AI智能物品保质期管理应用"
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 1.0.3+3
 
 environment:
   sdk: ^3.11.5

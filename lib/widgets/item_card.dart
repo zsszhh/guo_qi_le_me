@@ -152,9 +152,9 @@ class ItemCard extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.fromLTRB(
                           AppSpacing.md,
-                          4,
+                          2,
                           AppSpacing.md,
-                          8,
+                          12,
                         ),
                         child: _buildSuggestedDateHint(),
                       ),

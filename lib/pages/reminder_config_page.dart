@@ -6,6 +6,7 @@ import '../theme/spacing.dart';
 import '../models/reminder_config.dart';
 import '../services/database_service.dart';
 import '../services/background_service.dart';
+import '../widgets/message_toast.dart';
 
 /// 提醒配置页面
 class ReminderConfigPage extends ConsumerStatefulWidget {
@@ -85,15 +86,11 @@ class _ReminderConfigPageState extends ConsumerState<ReminderConfigPage> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('提醒配置已保存')),
-        );
+        MessageService.success(context, '提醒配置已保存');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('保存失败: $e')),
-        );
+        MessageService.error(context, '保存失败: $e');
       }
     } finally {
       if (mounted) {

@@ -4,6 +4,7 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../theme/colors.dart';
 import '../theme/typography.dart';
 import '../theme/spacing.dart';
+import 'message_toast.dart';
 
 /// 录音状态
 enum VoiceRecordState {
@@ -69,16 +70,12 @@ class _VoiceRecordButtonState extends State<VoiceRecordButton>
           _speech.stop();
           _setState(VoiceRecordState.idle);
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('录音出错: ${error.errorMsg}')),
-            );
+            MessageService.error(context, '录音出错: ${error.errorMsg}');
           }
         } else {
           // 初始化时的错误处理
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('语音初始化失败: ${error.errorMsg}')),
-            );
+            MessageService.error(context, '语音初始化失败: ${error.errorMsg}');
           }
         }
       },
@@ -332,9 +329,7 @@ class _VoiceRecordButtonState extends State<VoiceRecordButton>
 
   void _onRecordStart(LongPressStartDetails details) {
     if (!_speechAvailable) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('语音识别不可用')),
-      );
+      MessageService.warning(context, '语音识别不可用');
       return;
     }
 
@@ -392,12 +387,7 @@ class _VoiceRecordButtonState extends State<VoiceRecordButton>
       final deltaY = details.localPosition.dy;
       if (deltaY < -_cancelThreshold || _state == VoiceRecordState.cancelling) {
         _setState(VoiceRecordState.idle);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('已取消'),
-            duration: Duration(seconds: 1),
-          ),
-        );
+        MessageService.info(context, '已取消');
         return;
       }
 
@@ -405,12 +395,7 @@ class _VoiceRecordButtonState extends State<VoiceRecordButton>
       final duration = DateTime.now().difference(_recordStartTime!).inMilliseconds / 1000;
       if (duration < _minRecordDuration) {
         _setState(VoiceRecordState.idle);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('录音时间太短'),
-            duration: Duration(seconds: 1),
-          ),
-        );
+        MessageService.warning(context, '录音时间太短');
         return;
       }
 
@@ -419,9 +404,7 @@ class _VoiceRecordButtonState extends State<VoiceRecordButton>
 
       if (_recognizedText.isEmpty) {
         _setState(VoiceRecordState.idle);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('未识别到语音内容')),
-        );
+        MessageService.info(context, '未识别到语音内容');
         return;
       }
 
@@ -431,9 +414,7 @@ class _VoiceRecordButtonState extends State<VoiceRecordButton>
     } catch (e) {
       _setState(VoiceRecordState.idle);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('录音结束处理出错: $e')),
-        );
+        MessageService.error(context, '录音结束处理出错: $e');
       }
     }
   }
