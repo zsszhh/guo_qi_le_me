@@ -130,14 +130,10 @@ class ItemCard extends StatelessWidget {
                           ),
                         ],
                       ),
-                      // 建议日期提示或开封按钮
-                      if (_shouldShowSuggestedDate() || _shouldShowOpenButton()) ...[
-                        const SizedBox(height: 8),
-                        _shouldShowSuggestedDate()
-                            ? _buildSuggestedDateHint()
-                            : _shouldShowOpenButton()
-                                ? _buildOpenButton()
-                                : const SizedBox.shrink(),
+                      // 建议日期提示（已开封物品）
+                      if (_shouldShowSuggestedDate()) ...[
+                        const SizedBox(height: 6),
+                        _buildSuggestedDateHint(),
                       ],
                     ],
                   ),
@@ -219,6 +215,12 @@ class ItemCard extends StatelessWidget {
       ),
     ));
 
+    // 未开封物品：在末尾添加开封标签
+    if (_shouldShowOpenButton()) {
+      parts.add(_buildDot());
+      parts.add(_buildOpenTag());
+    }
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.baseline,
       textBaseline: TextBaseline.alphabetic,
@@ -286,39 +288,22 @@ class ItemCard extends StatelessWidget {
     );
   }
 
-  Widget _buildOpenButton() {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onOpenTap,
-        borderRadius: AppRadius.small,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: AppColors.primary.withValues(alpha: 0.1),
-            borderRadius: AppRadius.small,
-            border: Border.all(
-              color: AppColors.primary.withValues(alpha: 0.3),
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.open_in_new_rounded,
-                size: 14,
-                color: AppColors.primary,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                '开封',
-                style: AppTypography.bodySm.copyWith(
-                  color: AppColors.primary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
+  /// 小型开封标签（用于副标题行）
+  Widget _buildOpenTag() {
+    return GestureDetector(
+      onTap: onOpenTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          color: AppColors.primary.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Text(
+          '开封',
+          style: AppTypography.bodySm.copyWith(
+            color: AppColors.primary,
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ),
