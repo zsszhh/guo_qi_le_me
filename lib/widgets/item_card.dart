@@ -86,6 +86,7 @@ class ItemCard extends StatelessWidget {
                   child: Column(
                     children: [
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // 图标/图片
                           Container(
@@ -122,11 +123,22 @@ class ItemCard extends StatelessWidget {
                               ],
                             ),
                           ),
-                          // 状态徽章
-                          StatusBadge(
-                            status: effectiveStatus,
-                            daysRemaining: daysRemaining,
-                            compact: false,
+                          const SizedBox(width: 8),
+                          // 右侧区域：状态徽章 + 开封按钮
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              StatusBadge(
+                                status: effectiveStatus,
+                                daysRemaining: daysRemaining,
+                                compact: false,
+                              ),
+                              // 未开封物品：显示开封按钮
+                              if (_shouldShowOpenButton()) ...[
+                                const SizedBox(height: 4),
+                                _buildOpenButton(),
+                              ],
+                            ],
                           ),
                         ],
                       ),
@@ -215,12 +227,6 @@ class ItemCard extends StatelessWidget {
       ),
     ));
 
-    // 未开封物品：在末尾添加开封标签
-    if (_shouldShowOpenButton()) {
-      parts.add(_buildDot());
-      parts.add(_buildOpenTag());
-    }
-
     return Row(
       crossAxisAlignment: CrossAxisAlignment.baseline,
       textBaseline: TextBaseline.alphabetic,
@@ -288,15 +294,18 @@ class ItemCard extends StatelessWidget {
     );
   }
 
-  /// 小型开封标签（用于副标题行）
-  Widget _buildOpenTag() {
+  /// 开封按钮（放在右上角）
+  Widget _buildOpenButton() {
     return GestureDetector(
       onTap: onOpenTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
           color: AppColors.primary.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(4),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: AppColors.primary.withValues(alpha: 0.3),
+          ),
         ),
         child: Text(
           '开封',
