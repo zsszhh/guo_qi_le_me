@@ -130,6 +130,19 @@ class ShelfLifeAnalysis {
   });
 }
 
+/// 开封保质期分析结果
+class OpenedExpiryAnalysis {
+  final int suggestedDays;
+  final String? reasoning;
+  final String? storageTip;
+
+  const OpenedExpiryAnalysis({
+    required this.suggestedDays,
+    this.reasoning,
+    this.storageTip,
+  });
+}
+
 /// AI服务
 class AIService {
   static final AIService _instance = AIService._internal();
@@ -290,9 +303,59 @@ class AIService {
         throw Exception('AI响应内容为空');
       }
 
+      // 清理markdown代码块标记
+      String cleanContent = content.trim();
+      // 移除首尾的 ```xxx 和 ```
+      final codeBlockRegex = RegExp(r'^```[\w]*\n?([\s\S]*?)\n?```$');
+      final match = codeBlockRegex.firstMatch(cleanContent);
+      if (match != null) {
+        cleanContent = match.group(1)!.trim();
+      }
+
       return ShelfLifeAnalysis(
-        analysis: content.trim(),
+        analysis: cleanContent,
         confidence: 0.85,
+      );
+    } catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  /// 分析物品开封后的保质期
+  Future<OpenedExpiryAnalysis> analyzeOpenedExpiry({
+    required AIConfig config,
+    required String name,
+    required String category,
+    String? subCategory,
+    String? brand,
+    String? specification,
+    String? location,
+  }) async {
+    final prompt = _getOpenedExpiryPrompt(
+      name: name,
+      category: category,
+      subCategory: subCategory,
+      brand: brand,
+      specification: specification,
+      location: location,
+    );
+
+    try {
+      final response = await _callTextAPI(
+        config: config,
+        prompt: prompt,
+      );
+
+      final content = _extractContent(response);
+      if (content == null) {
+        throw Exception('AI响应内容为空');
+      }
+
+      final json = _parseJsonFromContent(content);
+      return OpenedExpiryAnalysis(
+        suggestedDays: json['suggested_days'] as int? ?? 7,
+        reasoning: json['reasoning'] as String?,
+        storageTip: json['storage_tip'] as String?,
       );
     } catch (e) {
       throw _handleError(e);
@@ -326,7 +389,45 @@ class AIService {
 4. 字数控制在100字以内
 
 【返回格式】
-直接返回分析文本，不要添加标题或格式。
+直接返回分析文本，不要添加标题、代码块、markdown格式。
+
+今天日期：$today
+''';
+  }
+
+  /// 开封保质期分析提示词
+  String _getOpenedExpiryPrompt({
+    required String name,
+    required String category,
+    String? subCategory,
+    String? brand,
+    String? specification,
+    String? location,
+  }) {
+    final today = DateTime.now().toString().split(' ')[0];
+
+    return '''
+你是物品保质期分析专家。请根据以下物品信息，给出开封后的建议使用天数。
+
+【物品信息】
+- 名称：$name
+- 分类：$category${subCategory != null ? ' ($subCategory)' : ''}
+- 品牌：${brand ?? '未知'}
+- 规格：${specification ?? '未知'}
+- 存放位置：${location ?? '未知'}
+
+【分析要求】
+1. 根据物品类型评估开封后的保质期
+2. 考虑存放位置对保质期的影响（如冰箱 vs 常温）
+3. 给出简短的原因说明（20字以内）
+4. 给出存储建议（15字以内）
+
+【返回格式】严格返回JSON，不要添加其他文字：
+{
+  "suggested_days": 7,
+  "reasoning": "简短说明原因",
+  "storage_tip": "存储建议"
+}
 
 今天日期：$today
 ''';
@@ -763,16 +864,19 @@ class AIService {
   }) async {
     final today = DateTime.now().toString().split(' ')[0];
 
-    // Step 1: 物品识别
-    final itemInfo = await _step1_IdentifyItem(config, originalImageBase64, enhancedImageBase64);
+    // Step 1 和 Step 2 并行执行（互不依赖）
+    final results = await Future.wait([
+      _step1_IdentifyItem(config, originalImageBase64, enhancedImageBase64),
+      _step2_ParseDates(config, originalImageBase64, enhancedImageBase64, today),
+    ]);
 
-    // Step 2: 日期解析
-    final dateInfo = await _step2_ParseDates(config, originalImageBase64, enhancedImageBase64, today);
+    final itemInfo = results[0] as ItemIdentification;
+    final dateInfo = results[1] as DateParsingResult;
 
-    // Step 3: 逻辑验证
+    // Step 3: 逻辑验证（依赖 Step 2 结果）
     final validatedInfo = await _step3_ValidateDates(config, dateInfo, today);
 
-    // Step 4: 智能推算
+    // Step 4: 智能推算（本地计算）
     final finalResult = _step4_CalculateExpiry(validatedInfo, itemInfo, today);
 
     return finalResult;
