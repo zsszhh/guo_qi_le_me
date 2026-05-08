@@ -5,27 +5,26 @@ import '../theme/spacing.dart';
 import '../utils/constants.dart';
 import '../utils/status_utils.dart';
 import '../utils/date_utils.dart' as app_utils;
-import 'status_badge.dart';
 import 'expiry_progress_bar.dart';
 
 /// 物品卡片组件
 class ItemCard extends StatelessWidget {
   final String name;
-  final String category;          // 改为字符串支持自定义分类
+  final String category;
   final String? subCategory;
   final DateTime purchaseDate;
   final DateTime expiryDate;
   final String? location;
   final String? imageUrl;
-  final ItemStatus? status;       // 可选状态，优先使用此状态而非计算
-  final int quantity;             // 数量
-  final String unit;              // 单位
-  final DateTime? openedDate;           // 开封日期
-  final DateTime? suggestedUseDate;     // 建议使用日期
-  final bool isIndividuallyWrapped;     // 是否独立包装
+  final ItemStatus? status;
+  final int quantity;
+  final String unit;
+  final DateTime? openedDate;
+  final DateTime? suggestedUseDate;
+  final bool isIndividuallyWrapped;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
-  final VoidCallback? onOpenTap;        // 快速开封回调
+  final VoidCallback? onOpenTap;
 
   const ItemCard({
     super.key,
@@ -36,23 +35,21 @@ class ItemCard extends StatelessWidget {
     required this.expiryDate,
     this.location,
     this.imageUrl,
-    this.status,                   // 新增参数
+    this.status,
     this.quantity = 1,
     this.unit = '个',
-    this.openedDate,                    // 新增
-    this.suggestedUseDate,              // 新增
-    this.isIndividuallyWrapped = false, // 新增
+    this.openedDate,
+    this.suggestedUseDate,
+    this.isIndividuallyWrapped = false,
     this.onTap,
     this.onLongPress,
-    this.onOpenTap,                     // 新增
+    this.onOpenTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    // 优先使用传入的状态，否则根据过期日期计算
     final effectiveStatus = status ?? StatusUtils.calculateStatus(expiryDate);
-    final daysRemaining = app_utils.DateUtils.daysRemaining(expiryDate);
-    final categoryIcon = _getCategoryIcon();
+    final categoryIcon = PresetCategories.getIcon(category);
 
     return Material(
       color: Colors.transparent,
@@ -63,54 +60,56 @@ class ItemCard extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             borderRadius: AppRadius.large,
+            color: AppColors.surfaceContainerLowest,
+            border: Border.all(
+              color: AppColors.outlineVariant.withValues(alpha: 0.3),
+            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha:0.04),
+                color: Colors.black.withValues(alpha: 0.04),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
             ],
           ),
-          child: ClipRRect(
-            borderRadius: AppRadius.large,
-            child: Stack(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceContainerLowest,
-                    border: Border.all(
-                      color: AppColors.outlineVariant.withValues(alpha:0.3),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 主要内容区域
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                  AppSpacing.sm,
+                ),
+                child: Row(
+                  children: [
+                    // 左侧图标
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceContainer,
+                        borderRadius: AppRadius.medium,
+                      ),
+                      child: Icon(
+                        categoryIcon,
+                        color: AppColors.primary,
+                        size: 22,
+                      ),
                     ),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
+                    const SizedBox(width: AppSpacing.sm),
+                    // 中间信息
+                    Expanded(
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // 图标/图片
-                          Container(
-                            width: 48,
-                            height: 48,
-                            decoration: BoxDecoration(
-                              color: AppColors.surfaceContainer,
-                              borderRadius: AppRadius.medium,
-                            ),
-                            child: Center(
-                              child: Icon(
-                                categoryIcon,
-                                color: AppColors.primary,
-                                size: 24,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: AppSpacing.sm),
-                          // 信息
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
+                          // 名称行
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
                                   name,
                                   style: AppTypography.bodyBase.copyWith(
                                     fontWeight: FontWeight.w600,
@@ -118,130 +117,123 @@ class ItemCard extends StatelessWidget {
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                                const SizedBox(height: 2),
-                                _buildSubtitle(),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          // 右侧区域：状态徽章 + 开封按钮
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              StatusBadge(
-                                status: effectiveStatus,
-                                daysRemaining: daysRemaining,
-                                compact: false,
                               ),
-                              // 未开封物品：显示开封按钮
-                              if (_shouldShowOpenButton()) ...[
-                                const SizedBox(height: 4),
-                                _buildOpenButton(),
-                              ],
+                              // 状态指示点
+                              Container(
+                                width: 8,
+                                height: 8,
+                                margin: const EdgeInsets.only(left: 6),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: _getStatusColor(effectiveStatus),
+                                ),
+                              ),
                             ],
                           ),
+                          const SizedBox(height: 2),
+                          // 副标题
+                          _buildSubtitle(),
                         ],
                       ),
-                      // 建议日期提示（已开封物品）
-                      if (_shouldShowSuggestedDate()) ...[
-                        const SizedBox(height: 6),
-                        _buildSuggestedDateHint(),
-                      ],
-                    ],
-                  ),
+                    ),
+                    // 右侧操作区
+                    if (_shouldShowOpenButton())
+                      _buildOpenIconButton()
+                    else
+                      const SizedBox(width: AppSpacing.sm),
+                  ],
                 ),
-                // 底部进度条
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: ExpiryProgressBar(
-                    purchaseDate: purchaseDate,
-                    expiryDate: expiryDate,
+              ),
+              // 建议日期提示（已开封物品）
+              if (_shouldShowSuggestedDate())
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: 4,
                   ),
+                  child: _buildSuggestedDateHint(),
                 ),
-              ],
-            ),
+              // 底部进度条
+              ExpiryProgressBar(
+                purchaseDate: purchaseDate,
+                expiryDate: expiryDate,
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  /// 计算距建议日期的天数
+  Color _getStatusColor(ItemStatus status) {
+    switch (status) {
+      case ItemStatus.normal:
+        return Colors.green;
+      case ItemStatus.expiringSoon:
+        return Colors.orange;
+      case ItemStatus.urgent:
+        return Colors.red;
+      case ItemStatus.expired:
+        return Colors.grey;
+      case ItemStatus.consumed:
+        return Colors.blue;
+    }
+  }
+
+  bool _shouldShowOpenButton() {
+    return openedDate == null && !isIndividuallyWrapped && onOpenTap != null;
+  }
+
+  bool _shouldShowSuggestedDate() {
+    return openedDate != null && suggestedUseDate != null;
+  }
+
   int? _daysUntilSuggestedUse() {
     if (suggestedUseDate == null) return null;
     return suggestedUseDate!.difference(DateTime.now()).inDays;
   }
 
-  /// 判断是否应该显示开封按钮
-  bool _shouldShowOpenButton() {
-    return openedDate == null && !isIndividuallyWrapped && onOpenTap != null;
-  }
-
-  /// 判断是否应该显示建议日期
-  bool _shouldShowSuggestedDate() {
-    return openedDate != null && suggestedUseDate != null;
-  }
-
-  IconData _getCategoryIcon() {
-    return PresetCategories.getIcon(category);
-  }
-
   Widget _buildSubtitle() {
-    final parts = <Widget>[];
     final days = app_utils.DateUtils.daysRemaining(purchaseDate);
     final timeText = days < 0
-        ? '${-days}天前添加'
+        ? '${-days}天前'
         : days == 0
-            ? '今天添加'
-            : '$days天前添加';
+            ? '今天'
+            : '$days天前';
 
+    final parts = <String>[];
     if (location != null && location!.isNotEmpty) {
-      parts.add(Flexible(
-        child: Text(
-          location!,
-          style: AppTypography.bodySm.copyWith(
-            color: AppColors.primary,
-            fontSize: 12,
-          ),
-          overflow: TextOverflow.ellipsis,
-        ),
-      ));
+      parts.add(location!);
     }
-    // 始终显示数量（只有1个也显示）
-    if (parts.isNotEmpty) parts.add(_buildDot());
-    parts.add(Text(
-      '$quantity$unit',
-      style: AppTypography.bodySm.copyWith(
-        color: AppColors.onSurface,
-        fontSize: 12,
-      ),
-    ));
-    if (parts.isNotEmpty) parts.add(_buildDot());
-    parts.add(Text(
-      timeText,
+    parts.add('$quantity$unit');
+    parts.add(timeText);
+
+    return Text(
+      parts.join(' · '),
       style: AppTypography.bodySm.copyWith(
         color: AppColors.onSurfaceVariant,
         fontSize: 12,
       ),
-    ));
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.baseline,
-      textBaseline: TextBaseline.alphabetic,
-      children: parts,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
     );
   }
 
-  Widget _buildDot() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: Text(
-        '·',
-        style: AppTypography.bodySm.copyWith(
-          color: AppColors.onSurfaceVariant,
-          fontSize: 12,
+  /// 开封图标按钮（小型圆形按钮）
+  Widget _buildOpenIconButton() {
+    return GestureDetector(
+      onTap: onOpenTap,
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: AppColors.primary.withValues(alpha: 0.1),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          Icons.open_in_new_rounded,
+          size: 18,
+          color: AppColors.primary,
         ),
       ),
     );
@@ -252,68 +244,35 @@ class ItemCard extends StatelessWidget {
     if (days == null) return const SizedBox.shrink();
 
     String text;
+    Color bgColor;
     Color textColor;
-    IconData? icon;
 
     if (days > 3) {
-      text = '建议在 ${suggestedUseDate!.month}月${suggestedUseDate!.day}日 前用完';
+      text = '建议 ${suggestedUseDate!.month}/${suggestedUseDate!.day} 前用完';
+      bgColor = AppColors.surfaceContainer;
       textColor = AppColors.onSurfaceVariant;
-      icon = null;
     } else if (days > 0) {
-      text = '建议在 ${suggestedUseDate!.month}月${suggestedUseDate!.day}日 前用完';
-      textColor = Colors.orange;
-      icon = Icons.warning_amber_rounded;
+      text = '⚠️ 建议尽快用完（剩$days天）';
+      bgColor = Colors.orange.withValues(alpha: 0.15);
+      textColor = Colors.orange.shade800;
     } else {
-      text = '已超过建议使用日期';
-      textColor = Colors.red;
-      icon = Icons.error_outline;
+      text = '❗ 已超过建议使用日期';
+      bgColor = Colors.red.withValues(alpha: 0.12);
+      textColor = Colors.red.shade700;
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: textColor.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(4),
+        color: bgColor,
+        borderRadius: AppRadius.small,
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (icon != null) ...[
-            Icon(icon, size: 14, color: textColor),
-            const SizedBox(width: 4),
-          ],
-          Text(
-            text,
-            style: AppTypography.bodySm.copyWith(
-              color: textColor,
-              fontSize: 12,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 开封按钮（放在右上角）
-  Widget _buildOpenButton() {
-    return GestureDetector(
-      onTap: onOpenTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: AppColors.primary.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: AppColors.primary.withValues(alpha: 0.3),
-          ),
-        ),
-        child: Text(
-          '开封',
-          style: AppTypography.bodySm.copyWith(
-            color: AppColors.primary,
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
-          ),
+      child: Text(
+        text,
+        style: AppTypography.bodySm.copyWith(
+          color: textColor,
+          fontSize: 12,
         ),
       ),
     );
