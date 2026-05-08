@@ -20,8 +20,12 @@ class ItemCard extends StatelessWidget {
   final ItemStatus? status;       // 可选状态，优先使用此状态而非计算
   final int quantity;             // 数量
   final String unit;              // 单位
+  final DateTime? openedDate;           // 开封日期
+  final DateTime? suggestedUseDate;     // 建议使用日期
+  final bool isIndividuallyWrapped;     // 是否独立包装
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
+  final VoidCallback? onOpenTap;        // 快速开封回调
 
   const ItemCard({
     super.key,
@@ -35,8 +39,12 @@ class ItemCard extends StatelessWidget {
     this.status,                   // 新增参数
     this.quantity = 1,
     this.unit = '个',
+    this.openedDate,                    // 新增
+    this.suggestedUseDate,              // 新增
+    this.isIndividuallyWrapped = false, // 新增
     this.onTap,
     this.onLongPress,
+    this.onOpenTap,                     // 新增
   });
 
   @override
@@ -131,12 +139,39 @@ class ItemCard extends StatelessWidget {
                     expiryDate: expiryDate,
                   ),
                 ),
+                // 建议日期提示或开封按钮
+                if (_shouldShowSuggestedDate() || _shouldShowOpenButton())
+                  Positioned(
+                    bottom: 8,
+                    right: AppSpacing.md,
+                    child: _shouldShowSuggestedDate()
+                        ? _buildSuggestedDateHint()
+                        : _shouldShowOpenButton()
+                            ? _buildOpenButton()
+                            : const SizedBox.shrink(),
+                  ),
               ],
             ),
           ),
         ),
       ),
     );
+  }
+
+  /// 计算距建议日期的天数
+  int? _daysUntilSuggestedUse() {
+    if (suggestedUseDate == null) return null;
+    return suggestedUseDate!.difference(DateTime.now()).inDays;
+  }
+
+  /// 判断是否应该显示开封按钮
+  bool _shouldShowOpenButton() {
+    return openedDate == null && !isIndividuallyWrapped && onOpenTap != null;
+  }
+
+  /// 判断是否应该显示建议日期
+  bool _shouldShowSuggestedDate() {
+    return openedDate != null && suggestedUseDate != null;
   }
 
   IconData _getCategoryIcon() {
@@ -197,6 +232,92 @@ class ItemCard extends StatelessWidget {
         style: AppTypography.bodySm.copyWith(
           color: AppColors.onSurfaceVariant,
           fontSize: 12,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSuggestedDateHint() {
+    final days = _daysUntilSuggestedUse();
+    if (days == null) return const SizedBox.shrink();
+
+    String text;
+    Color textColor;
+    IconData? icon;
+
+    if (days > 3) {
+      text = '建议在 ${suggestedUseDate!.month}月${suggestedUseDate!.day}日 前用完';
+      textColor = AppColors.onSurfaceVariant;
+      icon = null;
+    } else if (days > 0) {
+      text = '建议在 ${suggestedUseDate!.month}月${suggestedUseDate!.day}日 前用完';
+      textColor = Colors.orange;
+      icon = Icons.warning_amber_rounded;
+    } else {
+      text = '已超过建议使用日期';
+      textColor = Colors.red;
+      icon = Icons.error_outline;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: textColor.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 14, color: textColor),
+            const SizedBox(width: 4),
+          ],
+          Text(
+            text,
+            style: AppTypography.bodySm.copyWith(
+              color: textColor,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOpenButton() {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onOpenTap,
+        borderRadius: AppRadius.small,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.1),
+            borderRadius: AppRadius.small,
+            border: Border.all(
+              color: AppColors.primary.withValues(alpha: 0.3),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.open_in_new_rounded,
+                size: 14,
+                color: AppColors.primary,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                '开封',
+                style: AppTypography.bodySm.copyWith(
+                  color: AppColors.primary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
