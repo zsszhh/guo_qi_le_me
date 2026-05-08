@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../models/item.dart';
 import '../models/ai_config.dart';
@@ -151,10 +150,6 @@ class _AIAnalysisCardState extends State<AIAnalysisCard> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: AppColors.primary.withValues(alpha: 0.1),
-              ),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                child: Container(),
               ),
             ),
           ),

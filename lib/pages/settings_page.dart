@@ -129,7 +129,7 @@ class SettingsPage extends StatelessWidget {
               _buildSettingsItem(
                 icon: Icons.info_outline,
                 title: '关于应用',
-                subtitle: '版本 1.0.0',
+                subtitle: '版本 1.0.6',
                 onTap: () => _showAboutDialog(context),
               ),
               Divider(
@@ -402,7 +402,7 @@ class SettingsPage extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('版本: 1.0.0'),
+            Text('版本: 1.0.8'),
             SizedBox(height: AppSpacing.md),
             Text(
               '过期了么是一款轻量级的物品管理应用，专注于解决日常生活中食品和药品的过期问题。',

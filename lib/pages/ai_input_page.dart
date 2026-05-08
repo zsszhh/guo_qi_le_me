@@ -145,63 +145,67 @@ class _AIInputPageState extends ConsumerState<AIInputPage>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 动态脉冲圆环
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              // 外圈脉冲
-              AnimatedBuilder(
-                animation: _pulseAnimation,
-                builder: (context, child) {
-                  return Container(
-                    width: 80 * _pulseAnimation.value,
-                    height: 80 * _pulseAnimation.value,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: AppColors.primary.withValues(alpha: 0.3),
-                        width: 2,
+          // 动态脉冲圆环 - 固定容器大小防止布局抖动
+          SizedBox(
+            width: 96,
+            height: 96,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // 外圈脉冲
+                AnimatedBuilder(
+                  animation: _pulseAnimation,
+                  builder: (context, child) {
+                    return Container(
+                      width: 80 * _pulseAnimation.value,
+                      height: 80 * _pulseAnimation.value,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppColors.primary.withValues(alpha: 0.3),
+                          width: 2,
+                        ),
                       ),
+                    );
+                  },
+                ),
+                // 中圈
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: AppColors.primary.withValues(alpha: 0.5),
+                      width: 2,
                     ),
-                  );
-                },
-              ),
-              // 中圈
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: AppColors.primary.withValues(alpha: 0.5),
-                    width: 2,
                   ),
                 ),
-              ),
-              // 内圈旋转
-              TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0.0, end: 1.0),
-                duration: const Duration(seconds: 2),
-                builder: (context, value, child) {
-                  return Transform.rotate(
-                    angle: value * 2 * math.pi,
-                    child: CustomPaint(
-                      size: const Size(48, 48),
-                      painter: _ArcPainter(
-                        color: AppColors.primary,
-                        strokeWidth: 3,
+                // 内圈旋转
+                TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  duration: const Duration(seconds: 2),
+                  builder: (context, value, child) {
+                    return Transform.rotate(
+                      angle: value * 2 * math.pi,
+                      child: CustomPaint(
+                        size: const Size(48, 48),
+                        painter: _ArcPainter(
+                          color: AppColors.primary,
+                          strokeWidth: 3,
+                        ),
                       ),
-                    ),
-                  );
-                },
-              ),
-              // 中心图标
-              Icon(
-                _getLoadingIcon(),
-                size: 24,
-                color: AppColors.primary,
-              ),
-            ],
+                    );
+                  },
+                ),
+                // 中心图标
+                Icon(
+                  _getLoadingIcon(),
+                  size: 24,
+                  color: AppColors.primary,
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: AppSpacing.lg),
           // 主文字
@@ -424,6 +428,11 @@ class _AIInputPageState extends ConsumerState<AIInputPage>
 
       // 跳转到预填充表单页面
       if (mounted) {
+        // 重置加载状态
+        setState(() {
+          _isLoading = false;
+          _loadingProgress = 0;
+        });
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (context) => ItemEditPage(
@@ -494,6 +503,11 @@ class _AIInputPageState extends ConsumerState<AIInputPage>
 
       // 跳转到预填充表单页面
       if (mounted) {
+        // 重置加载状态
+        setState(() {
+          _isLoading = false;
+          _loadingProgress = 0;
+        });
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (context) => ItemEditPage(

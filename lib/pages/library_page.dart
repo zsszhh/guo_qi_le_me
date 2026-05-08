@@ -227,7 +227,12 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
     ItemsState state,
   ) {
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+      // 添加底部 padding 防止悬浮按钮遮挡
+      padding: const EdgeInsets.only(
+        left: AppSpacing.md,
+        right: AppSpacing.md,
+        bottom: 88, // 悬浮按钮高度 + 间距
+      ),
       itemCount: state.filteredItems.length,
       itemBuilder: (context, index) {
         final item = state.filteredItems[index];
