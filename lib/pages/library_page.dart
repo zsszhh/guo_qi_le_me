@@ -247,6 +247,9 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                   status: item.status,
                   quantity: item.quantity,
                   unit: item.unit,
+                  openedDate: item.openedDate,
+                  suggestedUseDate: item.suggestedUseDate,
+                  isIndividuallyWrapped: item.isIndividuallyWrapped,
                   onTap: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
@@ -260,10 +263,26 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                       _selectedIds.add(item.id);
                     });
                   },
+                  onOpenTap: () => _handleQuickOpen(item.id),
                 ),
         );
       },
     );
+  }
+
+  /// 处理快速开封
+  Future<void> _handleQuickOpen(String itemId) async {
+    final aiConfig = await ref.read(defaultAIConfigProvider.future);
+    await ref.read(itemsProvider.notifier).markAsOpened(itemId, aiConfig: aiConfig);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('已标记为开封'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   /// 构建可选择物品卡片

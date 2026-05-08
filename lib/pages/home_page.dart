@@ -12,11 +12,16 @@ import 'library_page.dart';
 import 'item_detail_page.dart';
 
 /// 首页
-class HomePage extends ConsumerWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends ConsumerState<HomePage> {
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(itemsProvider);
     final stats = state.stats;
 
@@ -176,7 +181,7 @@ class HomePage extends ConsumerWidget {
                       ? SliverToBoxAdapter(
                           child: _buildEmptyState(context),
                         )
-                      : _buildItemsList(context, ref, state),
+                      : _buildItemsList(context, state),
 
               // 底部间距
               const SliverToBoxAdapter(
@@ -333,10 +338,24 @@ class HomePage extends ConsumerWidget {
     );
   }
 
+  /// 处理快速开封
+  Future<void> _handleQuickOpen(String itemId) async {
+    final aiConfig = await ref.read(defaultAIConfigProvider.future);
+    await ref.read(itemsProvider.notifier).markAsOpened(itemId, aiConfig: aiConfig);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('已标记为开封'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
   /// 构建物品列表（按位置分组）
   Widget _buildItemsList(
     BuildContext context,
-    WidgetRef ref,
     ItemsState state,
   ) {
     // 只显示需要关注的物品（urgent 和 expiringSoon）
@@ -441,6 +460,9 @@ class HomePage extends ConsumerWidget {
               status: item.status,
               quantity: item.quantity,
               unit: item.unit,
+              openedDate: item.openedDate,
+              suggestedUseDate: item.suggestedUseDate,
+              isIndividuallyWrapped: item.isIndividuallyWrapped,
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
@@ -448,6 +470,7 @@ class HomePage extends ConsumerWidget {
                   ),
                 );
               },
+              onOpenTap: () => _handleQuickOpen(item.id),
             ),
           ),
         );
