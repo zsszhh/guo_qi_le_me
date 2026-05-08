@@ -76,88 +76,102 @@ class ItemCard extends StatelessWidget {
               ),
             ],
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 主要内容区域
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.md,
-                  AppSpacing.md,
-                  AppSpacing.md,
-                  AppSpacing.sm,
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          child: ClipRRect(
+            borderRadius: AppRadius.large,
+            child: Stack(
+              children: [
+                Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    // 左侧图标/图片
-                    ClipRRect(
-                      borderRadius: AppRadius.medium,
-                      child: hasImage
-                          ? Image.file(
-                              File(imageUrl!),
-                              width: 44,
-                              height: 44,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  _buildCategoryIcon(categoryIcon),
-                            )
-                          : _buildCategoryIcon(categoryIcon),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    // 中间信息
-                    Expanded(
-                      child: Column(
+                    // 主要内容区域
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.md,
+                        AppSpacing.md,
+                        AppSpacing.md,
+                        AppSpacing.sm,
+                      ),
+                      child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // 名称
-                          Text(
-                            name,
-                            style: AppTypography.bodyBase.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                          // 左侧图标/图片
+                          ClipRRect(
+                            borderRadius: AppRadius.medium,
+                            child: hasImage
+                                ? Image.file(
+                                    File(imageUrl!),
+                                    width: 44,
+                                    height: 44,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) =>
+                                        _buildCategoryIcon(categoryIcon),
+                                  )
+                                : _buildCategoryIcon(categoryIcon),
                           ),
-                          const SizedBox(height: 2),
-                          // 副标题
-                          _buildSubtitle(),
+                          const SizedBox(width: AppSpacing.sm),
+                          // 中间信息
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // 名称
+                                Text(
+                                  name,
+                                  style: AppTypography.bodyBase.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 2),
+                                // 副标题
+                                _buildSubtitle(),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                          // 右侧：状态徽章 + 开封按钮
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              StatusBadge(
+                                status: effectiveStatus,
+                                daysRemaining: daysRemaining,
+                              ),
+                              if (_shouldShowOpenButton()) ...[
+                                const SizedBox(height: 6),
+                                _buildOpenButton(),
+                              ],
+                            ],
+                          ),
                         ],
                       ),
                     ),
-                    const SizedBox(width: AppSpacing.sm),
-                    // 右侧：状态徽章 + 开封按钮
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        StatusBadge(
-                          status: effectiveStatus,
-                          daysRemaining: daysRemaining,
+                    // 建议日期提示（已开封物品）
+                    if (_shouldShowSuggestedDate())
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.md,
+                          vertical: 4,
                         ),
-                        if (_shouldShowOpenButton()) ...[
-                          const SizedBox(height: 6),
-                          _buildOpenButton(),
-                        ],
-                      ],
-                    ),
+                        child: _buildSuggestedDateHint(),
+                      ),
+                    // 底部留出进度条空间
+                    const SizedBox(height: 4),
                   ],
                 ),
-              ),
-              // 建议日期提示（已开封物品）
-              if (_shouldShowSuggestedDate())
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md,
-                    vertical: 4,
+                // 底部进度条
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: ExpiryProgressBar(
+                    purchaseDate: purchaseDate,
+                    expiryDate: expiryDate,
                   ),
-                  child: _buildSuggestedDateHint(),
                 ),
-              // 底部进度条
-              ExpiryProgressBar(
-                purchaseDate: purchaseDate,
-                expiryDate: expiryDate,
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
