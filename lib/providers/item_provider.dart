@@ -1,7 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import '../data/expiry_rules.dart';
 import '../models/ai_config.dart';
 import '../models/item.dart';
+import '../services/ai_service.dart';
 import '../services/database_service.dart';
 import '../services/notification_service.dart';
 import '../utils/status_utils.dart';
@@ -256,6 +258,80 @@ class ItemsNotifier extends StateNotifier<ItemsState> {
       final updatedItem = item.copyWith(
         status: ItemStatus.consumed,
         updatedAt: DateTime.now(),
+      );
+
+      await _dbService.updateItem(updatedItem);
+      await loadItems();
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+    }
+  }
+
+  /// 快速开封物品
+  /// 自动根据规则库或 AI 计算建议使用日期
+  Future<void> markAsOpened(String id, {AIConfig? aiConfig}) async {
+    try {
+      final item = state.items.where((i) => i.id == id).firstOrNull;
+      if (item == null) return;
+
+      // 独立包装物品不生成建议日期
+      if (item.isIndividuallyWrapped) {
+        final updatedItem = item.copyWith(
+          openedDate: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+        await _dbService.updateItem(updatedItem);
+        await loadItems();
+        return;
+      }
+
+      final now = DateTime.now();
+      DateTime? suggestedUseDate;
+      String? useDateSource;
+
+      // 尝试从规则库获取
+      final rule = ExpiryRules.findRule(item.category, item.subCategory);
+      if (rule != null) {
+        final days = rule.daysAfterOpened;
+        suggestedUseDate = now.add(Duration(days: days));
+        useDateSource = 'rule';
+      } else if (aiConfig != null) {
+        // 规则库无匹配，调用 AI 分析
+        try {
+          final aiService = AIService();
+          final analysis = await aiService.analyzeOpenedExpiry(
+            config: aiConfig,
+            name: item.name,
+            category: item.category,
+            subCategory: item.subCategory,
+            brand: item.brand,
+            specification: item.specification,
+            location: item.location,
+          );
+
+          suggestedUseDate = now.add(Duration(days: analysis.suggestedDays));
+          useDateSource = 'ai';
+        } catch (e) {
+          // AI 调用失败，使用默认值
+          suggestedUseDate = now.add(const Duration(days: ExpiryRules.defaultDaysAfterOpened));
+          useDateSource = 'fallback';
+        }
+      } else {
+        // 无 AI 配置，使用默认值
+        suggestedUseDate = now.add(const Duration(days: ExpiryRules.defaultDaysAfterOpened));
+        useDateSource = 'fallback';
+      }
+
+      // 确保建议日期不超过过期日期
+      if (suggestedUseDate.isAfter(item.expiryDate)) {
+        suggestedUseDate = item.expiryDate;
+      }
+
+      final updatedItem = item.copyWith(
+        openedDate: now,
+        suggestedUseDate: suggestedUseDate,
+        useDateSource: useDateSource,
+        updatedAt: now,
       );
 
       await _dbService.updateItem(updatedItem);
