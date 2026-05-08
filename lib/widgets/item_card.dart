@@ -74,86 +74,88 @@ class ItemCard extends StatelessWidget {
               ),
             ],
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+          child: Stack(
             children: [
-              // 主要内容区域
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.md,
-                  AppSpacing.md,
-                  AppSpacing.md,
-                  AppSpacing.sm,
-                ),
-                child: Row(
-                  children: [
-                    // 左侧图标
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceContainer,
-                        borderRadius: AppRadius.medium,
-                      ),
-                      child: Icon(
-                        categoryIcon,
-                        color: AppColors.primary,
-                        size: 22,
-                      ),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // 主要内容区域
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.md,
+                      AppSpacing.md,
+                      AppSpacing.md,
+                      AppSpacing.sm,
                     ),
-                    const SizedBox(width: AppSpacing.sm),
-                    // 中间信息
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // 名称
-                          Text(
-                            name,
-                            style: AppTypography.bodyBase.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 2),
-                          // 副标题
-                          _buildSubtitle(),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    // 右侧区域：状态徽章 + 开封按钮
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                    child: Row(
                       children: [
+                        // 左侧图标
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceContainer,
+                            borderRadius: AppRadius.medium,
+                          ),
+                          child: Icon(
+                            categoryIcon,
+                            color: AppColors.primary,
+                            size: 22,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        // 中间信息
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // 名称
+                              Text(
+                                name,
+                                style: AppTypography.bodyBase.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 2),
+                              // 副标题
+                              _buildSubtitle(),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        // 右侧状态徽章
                         StatusBadge(
                           status: effectiveStatus,
                           daysRemaining: daysRemaining,
                         ),
-                        if (_shouldShowOpenButton()) ...[
-                          const SizedBox(height: 6),
-                          _buildOpenIconButton(),
-                        ],
                       ],
                     ),
-                  ],
-                ),
-              ),
-              // 建议日期提示（已开封物品）
-              if (_shouldShowSuggestedDate())
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md,
-                    vertical: 4,
                   ),
-                  child: _buildSuggestedDateHint(),
-                ),
-              // 底部进度条
-              ExpiryProgressBar(
-                purchaseDate: purchaseDate,
-                expiryDate: expiryDate,
+                  // 建议日期提示（已开封物品）
+                  if (_shouldShowSuggestedDate())
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.md,
+                        vertical: 4,
+                      ),
+                      child: _buildSuggestedDateHint(),
+                    ),
+                  // 底部进度条
+                  ExpiryProgressBar(
+                    purchaseDate: purchaseDate,
+                    expiryDate: expiryDate,
+                  ),
+                ],
               ),
+              // 右上角开封按钮
+              if (_shouldShowOpenButton())
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: _buildOpenButton(),
+                ),
             ],
           ),
         ),
@@ -200,21 +202,34 @@ class ItemCard extends StatelessWidget {
     );
   }
 
-  /// 开封图标按钮（小型圆形按钮）
-  Widget _buildOpenIconButton() {
+  /// 右上角开封按钮
+  Widget _buildOpenButton() {
     return GestureDetector(
       onTap: onOpenTap,
       child: Container(
-        width: 32,
-        height: 32,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
           color: AppColors.primary.withValues(alpha: 0.1),
-          shape: BoxShape.circle,
+          borderRadius: AppRadius.small,
         ),
-        child: Icon(
-          Icons.open_in_new_rounded,
-          size: 16,
-          color: AppColors.primary,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.unarchive_rounded,
+              size: 14,
+              color: AppColors.primary,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              '开封',
+              style: AppTypography.bodySm.copyWith(
+                color: AppColors.primary,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
       ),
     );
