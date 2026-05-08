@@ -150,9 +150,11 @@ class ItemCard extends StatelessWidget {
                     // 建议日期提示（已开封物品）
                     if (_shouldShowSuggestedDate())
                       Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.md,
-                          vertical: 4,
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.md,
+                          4,
+                          AppSpacing.md,
+                          8,
                         ),
                         child: _buildSuggestedDateHint(),
                       ),
