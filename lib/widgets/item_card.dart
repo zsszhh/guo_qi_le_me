@@ -83,49 +83,62 @@ class ItemCard extends StatelessWidget {
                       color: AppColors.outlineVariant.withValues(alpha:0.3),
                     ),
                   ),
-                  child: Row(
+                  child: Column(
                     children: [
-                      // 图标/图片
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceContainer,
-                          borderRadius: AppRadius.medium,
-                        ),
-                        child: Center(
-                          child: Icon(
-                            categoryIcon,
-                            color: AppColors.primary,
-                            size: 24,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                      // 信息
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              name,
-                              style: AppTypography.bodyBase.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                      Row(
+                        children: [
+                          // 图标/图片
+                          Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceContainer,
+                              borderRadius: AppRadius.medium,
                             ),
-                            const SizedBox(height: 2),
-                            _buildSubtitle(),
-                          ],
-                        ),
+                            child: Center(
+                              child: Icon(
+                                categoryIcon,
+                                color: AppColors.primary,
+                                size: 24,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                          // 信息
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  name,
+                                  style: AppTypography.bodyBase.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 2),
+                                _buildSubtitle(),
+                              ],
+                            ),
+                          ),
+                          // 状态徽章
+                          StatusBadge(
+                            status: effectiveStatus,
+                            daysRemaining: daysRemaining,
+                            compact: false,
+                          ),
+                        ],
                       ),
-                      // 状态徽章
-                      StatusBadge(
-                        status: effectiveStatus,
-                        daysRemaining: daysRemaining,
-                        compact: false,
-                      ),
+                      // 建议日期提示或开封按钮
+                      if (_shouldShowSuggestedDate() || _shouldShowOpenButton()) ...[
+                        const SizedBox(height: 8),
+                        _shouldShowSuggestedDate()
+                            ? _buildSuggestedDateHint()
+                            : _shouldShowOpenButton()
+                                ? _buildOpenButton()
+                                : const SizedBox.shrink(),
+                      ],
                     ],
                   ),
                 ),
@@ -139,17 +152,6 @@ class ItemCard extends StatelessWidget {
                     expiryDate: expiryDate,
                   ),
                 ),
-                // 建议日期提示或开封按钮
-                if (_shouldShowSuggestedDate() || _shouldShowOpenButton())
-                  Positioned(
-                    bottom: 8,
-                    right: AppSpacing.md,
-                    child: _shouldShowSuggestedDate()
-                        ? _buildSuggestedDateHint()
-                        : _shouldShowOpenButton()
-                            ? _buildOpenButton()
-                            : const SizedBox.shrink(),
-                  ),
               ],
             ),
           ),
