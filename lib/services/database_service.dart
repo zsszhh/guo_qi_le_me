@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../models/item.dart';
@@ -289,9 +290,16 @@ class DatabaseService {
 
     // 版本5到版本6：添加开封保质期相关字段
     if (oldVersion < 6) {
-      await db.execute('ALTER TABLE $tableItems ADD COLUMN suggested_use_date TEXT');
-      await db.execute('ALTER TABLE $tableItems ADD COLUMN use_date_source TEXT');
-      await db.execute('ALTER TABLE $tableItems ADD COLUMN is_individually_wrapped INTEGER DEFAULT 0');
+      try {
+        await db.transaction((txn) async {
+          await txn.execute('ALTER TABLE $tableItems ADD COLUMN suggested_use_date TEXT');
+          await txn.execute('ALTER TABLE $tableItems ADD COLUMN use_date_source TEXT');
+          await txn.execute('ALTER TABLE $tableItems ADD COLUMN is_individually_wrapped INTEGER DEFAULT 0');
+        });
+      } catch (e) {
+        // 字段可能已存在（迁移重试场景），忽略错误
+        debugPrint('版本6迁移警告: $e');
+      }
     }
   }
 
