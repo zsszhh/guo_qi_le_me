@@ -125,6 +125,7 @@ integration_test/
 .riverpod/
 *.stack_dump
 development_doc.md
+docs/
 
 # Environment files
 .env
