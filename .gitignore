@@ -3,6 +3,8 @@
 *.log
 *.pyc
 *.swp
+*.swo
+*~
 .DS_Store
 .atom/
 .build/
@@ -11,6 +13,12 @@
 .svn/
 .swiftpm/
 migrate_working_dir/
+*.tmp
+*.temp
+*.bak
+*.backup
+*.cache
+.localhistory/
 
 # IntelliJ related
 *.iml
@@ -32,6 +40,9 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
+*.g.dart
+*.freezed.dart
+*.mocks.dart
 
 # Symbolication related
 app.*.symbols
@@ -48,6 +59,11 @@ app.*.map.json
 /android/.gradle/
 /android/app/build/
 /android/build/
+/android/*.iml
+/android/local.properties
+/android/key.properties
+*.keystore
+!debug.keystore
 
 # iOS build
 /ios/Pods/
@@ -61,13 +77,27 @@ app.*.map.json
 /ios/Flutter/flutter_assets/
 /ios/ServiceDefinitions.json
 /ios/Runner.app
+*.ipa
+*.dSYM.zip
+*.dSYM
 
 # macOS build
 /macos/Flutter/GeneratedPluginRegistrant.swift
 /macos/Flutter/ephemeral/
+*.dSYM
 
 # Windows build
 /windows/flutter/ephemeral/
+*.exe
+*.dll
+*.pdb
+*.ilk
+*.obj
+*.o
+*.a
+*.lib
+*.exp
+*.log
 
 # Linux build
 /linux/flutter/ephemeral/
@@ -75,6 +105,7 @@ app.*.map.json
 # Web build
 /web/favicon.png
 /web/icons/
+/web/index.html
 
 # Test coverage
 coverage/
@@ -85,6 +116,15 @@ coverage/
 
 # Stitch AI generated (如果需要保留可删除此行)
 stitch_ai_expiry_guardian/
+
+# Development files
+test_driver/
+integration_test/
+.fvm/
+.sdkmanrc
+.riverpod/
+*.stack_dump
+development_doc.md
 
 # Environment files
 .env
@@ -105,5 +145,28 @@ openspec/
 
 
 *.psd
-
 *.ai
+*.sketch
+*.fig
+
+test/
+
+# IDE specific files
+*.xcuserstate
+*.xcuserdatad
+*.xcworkspace/xcuserdata
+**/xcuserdata/
+**/DerivedData/
+
+# CMake build directories
+cmake-build-*/
+
+# Makefile for building
+CMakeLists.txt.user
+
+# Backup files
+*.#*
+.#*
+
+# Files that might contain binary data
+*.blob
